@@ -1,0 +1,24 @@
+version: '3.3'
+
+services:
+  balance-aggregator-postgres:
+    # Use this postgres image https://github.com/Giveth/postgres-givethio
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=balance-aggregator
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5532:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+
+networks:
+  balance-aggregator:
+    external: true
+

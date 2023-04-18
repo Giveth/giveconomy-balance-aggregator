@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { BalanceService } from 'src/service/balance.service';
-import { Balance } from 'src/storage/Entities/Balance';
+import { Balance } from 'src/modules/balance/balance';
+import { BalanceService } from 'src/modules/balance/balance.service';
 
 @Controller()
 export class BalanceController {

@@ -1,20 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Balance } from 'src/storage/Entities/Balance';
+import { Balance } from 'src/modules/balance/balance';
 import { Repository } from 'typeorm';
 
 @Injectable()
 export class BalanceService {
   constructor(
     @InjectRepository(Balance)
-    private readonly balanceRepository: Repository<Balance>,
+    readonly balanceRepository: Repository<Balance>,
   ) {}
 
   async findAll(): Promise<Balance[]> {
     return this.balanceRepository.find();
   }
 
-  async create(balance: Balance): Promise<Balance> {
+  async create(balance: Partial<Balance>): Promise<Balance> {
     return this.balanceRepository.save(balance);
+  }
+
+  async getBalance(address: string, network: number): Promise<Balance> {
+    return this.balanceRepository.findOneOrFail({
+      where: {
+        address,
+        network,
+      },
+    });
   }
 }
