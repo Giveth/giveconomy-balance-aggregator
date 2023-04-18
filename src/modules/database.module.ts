@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Balance } from 'src/modules/balance/balance';
+import { Balance } from 'src/modules/balance/balance.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
 @Module({

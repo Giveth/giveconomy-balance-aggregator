@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Balance } from 'src/modules/balance/balance';
+import { Balance } from 'src/modules/balance/balance.entity';
 import { BalanceService } from 'src/modules/balance/balance.service';
 import { DatabaseModule } from 'src/modules/database.module';
 import TestConfigureModule from 'test/modules/testConfigure.module';
@@ -22,7 +22,7 @@ describe('BalanceService', () => {
   });
 
   afterEach(async () => {
-    await service.balanceRepository.query('DELETE FROM balance');
+    // await service.balanceRepository.query('DELETE FROM balance');
   });
 
   describe('create', () => {
