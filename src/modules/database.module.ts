@@ -24,16 +24,10 @@ import { ConnectionOptions, DataSource } from 'typeorm';
         return options;
       },
       dataSourceFactory: async (options: ConnectionOptions) => {
+        console.log('dataSourceFactory');
         const dataSource = await new DataSource(options).initialize();
         if (options.synchronize) {
           await dataSource.synchronize();
-        }
-        if (process.env.NODE_ENV === 'test') {
-          const entities = dataSource.entityMetadatas;
-          for (const entity of entities) {
-            const repository = dataSource.getRepository(entity.name);
-            await repository.query(`DELETE FROM ${entity.tableName}`);
-          }
         }
         return dataSource;
       },

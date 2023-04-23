@@ -1,20 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Balance } from 'src/modules/balance/balance.entity';
 import { BalanceService } from 'src/modules/balance/balance.service';
-import { DatabaseModule } from 'src/modules/database.module';
-import TestConfigureModule from 'test/modules/testConfigure.module';
+import { getConnectionOptions } from 'test/test-utils';
 
 describe('BalanceService', () => {
   let service: BalanceService;
 
   beforeEach(async () => {
+    const options = getConnectionOptions();
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        TestConfigureModule,
-        DatabaseModule,
+        TypeOrmModule.forRoot({
+          ...options,
+          entities: [Balance],
+        }),
         TypeOrmModule.forFeature([Balance]),
       ],
+
       providers: [BalanceService],
     }).compile();
 
