@@ -24,7 +24,6 @@ import { ConnectionOptions, DataSource } from 'typeorm';
         return options;
       },
       dataSourceFactory: async (options: ConnectionOptions) => {
-        console.log('dataSourceFactory');
         const dataSource = await new DataSource(options).initialize();
         if (options.synchronize) {
           await dataSource.synchronize();

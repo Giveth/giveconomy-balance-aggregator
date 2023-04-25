@@ -1,9 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Exclusion,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
+@Exclusion(`USING gist (address WITH =, network WITH =, "timeRange" WITH &&)`)
+@Exclusion(`USING gist (address WITH =, network WITH =, "blockRange" WITH &&)`)
+@Index(['address', 'network', 'timeRange'])
+@Index(['address', 'network', 'blockRange'])
 export class Balance {
   @PrimaryGeneratedColumn()
-  vid: number;
+  id: number;
 
   // User wallet address
   @Column()

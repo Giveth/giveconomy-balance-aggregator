@@ -37,7 +37,7 @@ describe('BalanceService', () => {
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1,2)',
       });
-      expect(balance).toHaveProperty('vid');
+      expect(balance).toHaveProperty('id');
       expect(balance.address).toBe('0x123456789');
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');

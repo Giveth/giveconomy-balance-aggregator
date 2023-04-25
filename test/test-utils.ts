@@ -9,11 +9,13 @@ export const getConnectionOptions = (): DataSourceOptions => ({
   password: 'postgres',
   database: 'balance-aggregator',
   entities: [__dirname + '/../src/modules/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/../src/migrations/*.ts'],
 });
 let connection: DataSource;
 export const globalSetup = async () => {
   // connect to the database and run migrations by typeorm
-  const AppDataSource = new DataSource(getConnectionOptions());
+  const options = getConnectionOptions();
+  const AppDataSource = new DataSource(options);
   await AppDataSource.initialize();
   await AppDataSource.synchronize(true);
   await AppDataSource.runMigrations();
