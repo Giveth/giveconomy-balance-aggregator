@@ -1,5 +1,9 @@
+import * as BN from 'bn.js';
 import { DataSource } from 'typeorm';
 import { DataSourceOptions } from 'typeorm/data-source/DataSourceOptions';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const crypto = require('crypto');
 
 export const getConnectionOptions = (): DataSourceOptions => ({
   type: 'postgres',
@@ -28,3 +32,12 @@ export const globalTeardown = async () => {
 };
 
 export default globalSetup;
+
+export const generateRandomHexNumber = (bytesLen: number): string =>
+  crypto.randomBytes(bytesLen).toString('hex');
+
+export const generateRandomDecimalNumber = bytesLen => {
+  const hex = generateRandomHexNumber(bytesLen);
+  const bn = new BN(hex, 16);
+  return bn.toString(10);
+};

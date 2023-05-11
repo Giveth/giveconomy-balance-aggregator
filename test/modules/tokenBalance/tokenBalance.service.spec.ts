@@ -1,8 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as BN from 'bn.js';
 import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
 import { TokenBalanceService } from 'src/modules/tokenBalance/tokenBalance.service';
-import { getConnectionOptions } from 'test/test-utils';
+import {
+  generateRandomDecimalNumber,
+  getConnectionOptions,
+} from 'test/test-utils';
 
 describe('TokenBalanceService', () => {
   let service: TokenBalanceService;
@@ -44,29 +48,29 @@ describe('TokenBalanceService', () => {
     });
   });
 
-  describe('get balance', () => {
-    const baseUserData = {
+  describe('get balance single network', () => {
+    const baseTokenBalance = {
       address: '0x123456789',
       network: 1,
     };
 
     beforeEach(async () => {
-      await service.balanceRepository.clear();
+      await service.tokenBalanceRepository.clear();
       // Fill sample data
       await service.create({
-        ...baseUserData,
+        ...baseTokenBalance,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1000,2000)',
       });
       await service.create({
-        ...baseUserData,
+        ...baseTokenBalance,
         balance: '2000000000000000000',
         timeRange: '[2021-01-02,2021-01-03)',
         blockRange: '[2000,3000)',
       });
       await service.create({
-        ...baseUserData,
+        ...baseTokenBalance,
         balance: '3000000000000000000',
         timeRange: '[2021-01-03,)',
         blockRange: '[3000,)',
@@ -74,9 +78,9 @@ describe('TokenBalanceService', () => {
     });
 
     it('get simple balance', async () => {
-      await service.balanceRepository.clear();
+      await service.tokenBalanceRepository.clear();
       const data = {
-        ...baseUserData,
+        ...baseTokenBalance,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1,)',
@@ -94,16 +98,16 @@ describe('TokenBalanceService', () => {
 
     it('get balance by timestamp and block', async () => {
       let balance = await service.getBalanceSingleUser({
-        address: baseUserData.address,
-        network: baseUserData.network,
+        address: baseTokenBalance.address,
+        network: baseTokenBalance.network,
         timestamp: new Date('2021-01-02 GMT').getTime() / 1000,
       });
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('2000000000000000000');
 
       balance = await service.getBalanceSingleUser({
-        address: baseUserData.address,
-        network: baseUserData.network,
+        address: baseTokenBalance.address,
+        network: baseTokenBalance.network,
         block: 1533,
       });
       expect(balance).toBeTruthy();
@@ -112,11 +116,96 @@ describe('TokenBalanceService', () => {
 
     it('get latest balance when no timestamp or block is provided', async () => {
       const balance = await service.getBalanceSingleUser({
-        address: baseUserData.address,
-        network: baseUserData.network,
+        address: baseTokenBalance.address,
+        network: baseTokenBalance.network,
       });
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('3000000000000000000');
+    });
+  });
+
+  describe('get balance multiple networks', () => {
+    const baseTokenBalance = {
+      address: '0x123456789',
+    };
+    const networks = [1, 2, 3, 4, 5];
+    let earliestBalances: Partial<TokenBalance>[] = [];
+    let latestBalances: Partial<TokenBalance>[] = [];
+
+    beforeEach(async () => {
+      await service.tokenBalanceRepository.clear();
+      earliestBalances = networks.map(network => ({
+        ...baseTokenBalance,
+        timeRange: '[2020-01-01,2021-01-01)',
+        blockRange: '[0,1000)',
+        network,
+        balance: generateRandomDecimalNumber(31), // To avoid overflow in 32 bytes
+      }));
+      latestBalances = networks.map(network => ({
+        ...baseTokenBalance,
+        timeRange: '[2021-01-01,)',
+        blockRange: '[1000,)',
+        network,
+        balance: generateRandomDecimalNumber(31), // To avoid overflow in 32 bytes
+      }));
+
+      // Fill sample data
+      await service.tokenBalanceRepository.save(earliestBalances);
+      await service.tokenBalanceRepository.save(latestBalances);
+    });
+
+    it('get balance multiple networks', async () => {
+      // Get balance for networks 1, 2, 3
+      const result = await service.getBalanceSingleUser({
+        address: baseTokenBalance.address,
+        network: networks.slice(0, 3),
+      });
+
+      const expectedBalance = latestBalances
+        .slice(0, 3)
+        .reduce(
+          (balanceBN, tokenBalance) =>
+            balanceBN.add(new BN(tokenBalance.balance)),
+          new BN(0),
+        )
+        .toString();
+
+      expect(result).toBeTruthy();
+      expect(result.balanceSum).toEqual(expectedBalance);
+    });
+
+    it('get balance all networks', async () => {
+      const result = await service.getBalanceSingleUser({
+        address: baseTokenBalance.address,
+      });
+
+      const expectedBalance = latestBalances
+        .reduce(
+          (balanceBN, tokenBalance) =>
+            balanceBN.add(new BN(tokenBalance.balance)),
+          new BN(0),
+        )
+        .toString();
+
+      expect(result).toBeTruthy();
+      expect(result.balanceSum).toEqual(expectedBalance);
+    });
+    it('get balance all network at specific timestamp', async () => {
+      const result = await service.getBalanceSingleUser({
+        address: baseTokenBalance.address,
+        timestamp: new Date('2020-02-01 GMT').getTime() / 1000,
+      });
+
+      const expectedBalance = earliestBalances
+        .reduce(
+          (balanceBN, tokenBalance) =>
+            balanceBN.add(new BN(tokenBalance.balance)),
+          new BN(0),
+        )
+        .toString();
+
+      expect(result).toBeTruthy();
+      expect(result.balanceSum).toEqual(expectedBalance);
     });
   });
 });

@@ -8,15 +8,15 @@ import { Repository } from 'typeorm';
 export class TokenBalanceService {
   constructor(
     @InjectRepository(TokenBalance)
-    readonly balanceRepository: Repository<TokenBalance>,
+    readonly tokenBalanceRepository: Repository<TokenBalance>,
   ) {}
 
   async findAll(): Promise<TokenBalance[]> {
-    return this.balanceRepository.find();
+    return this.tokenBalanceRepository.find();
   }
 
-  async create(balance: Partial<TokenBalance>): Promise<TokenBalance> {
-    return this.balanceRepository.save(balance);
+  async create(tokenBalance: Partial<TokenBalance>): Promise<TokenBalance> {
+    return this.tokenBalanceRepository.save(tokenBalance);
   }
 
   /**
@@ -40,18 +40,17 @@ export class TokenBalanceService {
     balanceSum?: string;
   }> {
     const { address, network, timestamp, block } = params;
-    let query = this.balanceRepository
-      .createQueryBuilder('balance')
-      .where('balance.address = :address ', {
+    let query = this.tokenBalanceRepository
+      .createQueryBuilder('tokenBalance')
+      .where('tokenBalance.address = :address ', {
         address,
       });
 
     // add timestamp query if exists
-
     switch (true) {
       case timestamp !== undefined:
         query = query.andWhere(
-          `balance.timeRange @> to_timestamp(:timestamp)`,
+          `tokenBalance.timeRange @> to_timestamp(:timestamp)`,
           {
             timestamp: Math.floor(timestamp),
           },
@@ -59,32 +58,36 @@ export class TokenBalanceService {
         break;
 
       case block !== undefined:
-        query = query.andWhere(`balance.blockRange @> ${Math.floor(block)}`);
+        query = query.andWhere(
+          `tokenBalance.blockRange @> ${Math.floor(block)}`,
+        );
         break;
 
       default:
-        query = query.andWhere('upper_inf(balance.blockRange)');
+        query = query.andWhere('upper_inf(tokenBalance.blockRange)');
     }
 
     // Single network
     if (isNumber(network)) {
-      query = query
-        .andWhere('balance.network = :network', {
+      return query
+        .andWhere('tokenBalance.network = :network', {
           network,
         })
-        .addSelect(['balance.balance', 'balance.network']);
-    } else {
-      // Multiple networks
-      if (!Array.isArray(network)) {
-        query = query.andWhere('balance.network IN (:...networks)', {
+        .getOne();
+    }
+
+    // Multiple networks
+    else {
+      if (Array.isArray(network)) {
+        query = query.andWhere('tokenBalance.network IN (:...networks)', {
           networks: network,
         });
       }
-      query = query
-        .addSelect('SUM(balance.balance)', 'balanceSum')
-        .groupBy('address');
+      return query
+        .select('SUM(tokenBalance.balance)', 'balanceSum')
+        .addSelect(['tokenBalance.address'])
+        .groupBy('tokenBalance.address')
+        .getRawOne();
     }
-
-    return query.getOne();
   }
 }

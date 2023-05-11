@@ -1,6 +1,5 @@
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { DatabaseModule } from 'src/modules/database.module';
 import TestConfigureModule from 'test/modules/testConfigure.module';
 
 describe('Configure Module', () => {
