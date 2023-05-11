@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Balance } from 'src/modules/balance/balance.entity';
+import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
 @Module({
@@ -18,7 +18,7 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           username: configService.get<string>('DATABASE_USER'),
           password: configService.get<string>('DATABASE_PASSWORD'),
           database: configService.get<string>('DATABASE_NAME'),
-          entities: [Balance],
+          entities: [TokenBalance],
           synchronize: process.env.NODE_ENV !== 'production',
         };
         return options;

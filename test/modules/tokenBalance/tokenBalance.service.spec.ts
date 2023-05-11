@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
-import { Balance } from 'src/modules/balance/balance.entity';
-import { BalanceService } from 'src/modules/balance/balance.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
+import { TokenBalanceService } from 'src/modules/tokenBalance/tokenBalance.service';
 import { getConnectionOptions } from 'test/test-utils';
 
-describe('BalanceService', () => {
-  let service: BalanceService;
+describe('TokenBalanceService', () => {
+  let service: TokenBalanceService;
 
   beforeEach(async () => {
     const options = getConnectionOptions();
@@ -13,15 +13,15 @@ describe('BalanceService', () => {
       imports: [
         TypeOrmModule.forRoot({
           ...options,
-          entities: [Balance],
+          entities: [TokenBalance],
         }),
-        TypeOrmModule.forFeature([Balance]),
+        TypeOrmModule.forFeature([TokenBalance]),
       ],
 
-      providers: [BalanceService],
+      providers: [TokenBalanceService],
     }).compile();
 
-    service = module.get<BalanceService>(BalanceService);
+    service = module.get<TokenBalanceService>(TokenBalanceService);
   });
 
   afterEach(async () => {
@@ -82,7 +82,7 @@ describe('BalanceService', () => {
         blockRange: '[1,)',
       };
       await service.create(data);
-      const balance = await service.getBalance({
+      const balance = await service.getBalanceSingleUser({
         address: data.address,
         network: data.network,
       });
@@ -93,7 +93,7 @@ describe('BalanceService', () => {
     });
 
     it('get balance by timestamp and block', async () => {
-      let balance = await service.getBalance({
+      let balance = await service.getBalanceSingleUser({
         address: baseUserData.address,
         network: baseUserData.network,
         timestamp: new Date('2021-01-02 GMT').getTime() / 1000,
@@ -101,7 +101,7 @@ describe('BalanceService', () => {
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('2000000000000000000');
 
-      balance = await service.getBalance({
+      balance = await service.getBalanceSingleUser({
         address: baseUserData.address,
         network: baseUserData.network,
         block: 1533,
@@ -111,7 +111,7 @@ describe('BalanceService', () => {
     });
 
     it('get latest balance when no timestamp or block is provided', async () => {
-      const balance = await service.getBalance({
+      const balance = await service.getBalanceSingleUser({
         address: baseUserData.address,
         network: baseUserData.network,
       });

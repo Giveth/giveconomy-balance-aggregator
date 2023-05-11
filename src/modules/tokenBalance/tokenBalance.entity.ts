@@ -11,7 +11,7 @@ import {
 @Exclusion(`USING gist (address WITH =, network WITH =, "blockRange" WITH &&)`)
 @Index(['address', 'network', 'timeRange'])
 @Index(['address', 'network', 'blockRange'])
-export class Balance {
+export class TokenBalance {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -19,7 +19,8 @@ export class Balance {
   @Column()
   address: string;
 
-  @Column()
+  // Precision 78, scale 0 is enough for 32 Bytes size integers in range [0, 2^256)
+  @Column('numeric', { precision: 78, scale: 0 })
   balance: string;
 
   @Column({ type: 'integer' })
