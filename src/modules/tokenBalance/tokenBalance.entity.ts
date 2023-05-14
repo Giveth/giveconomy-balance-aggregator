@@ -26,7 +26,7 @@ export class TokenBalance {
   @Column({ type: 'integer' })
   network: number;
 
-  @Column({ type: 'tstzrange' })
+  @Column({ type: 'tsrange' })
   timeRange: string;
 
   @Column({ type: 'int4range' })

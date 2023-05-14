@@ -50,7 +50,7 @@ export class TokenBalanceService {
     switch (true) {
       case timestamp !== undefined:
         query = query.andWhere(
-          `tokenBalance.timeRange @> to_timestamp(:timestamp)`,
+          `tokenBalance.timeRange @> to_timestamp(:timestamp) AT TIME ZONE 'UTC'`,
           {
             timestamp: Math.floor(timestamp),
           },

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import * as BN from 'bn.js';
 import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
 import { TokenBalanceService } from 'src/modules/tokenBalance/tokenBalance.service';
@@ -26,6 +26,8 @@ describe('TokenBalanceService', () => {
     }).compile();
 
     service = module.get<TokenBalanceService>(TokenBalanceService);
+
+    await service.tokenBalanceRepository.query('DELETE FROM token_balance');
   });
 
   afterEach(async () => {
