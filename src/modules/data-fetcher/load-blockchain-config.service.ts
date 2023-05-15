@@ -5,14 +5,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as yaml from 'js-yaml';
 
-export type SingleChainConfig = {
+export type SingleFetchConfig = {
   name: string;
+  network: number;
   contractAddress: string;
   subgraphUrl: string;
 };
 
 export type BlockChainConfig = {
-  networks: SingleChainConfig[];
+  networks: SingleFetchConfig[];
 };
 
 let blockChainConfig: BlockChainConfig = null;

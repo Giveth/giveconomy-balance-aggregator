@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { DataFetcherModule } from 'src/modules/data-fetcher/data-fetcher.module';
 import { LoadBlockchainConfigService } from 'src/modules/data-fetcher/load-blockchain-config.service';
@@ -28,6 +27,7 @@ describe('LoadBlockchainConfigService', () => {
     expect(config.networks).toHaveLength(1);
     expect(config.networks[0]).toEqual({
       name: 'test-network',
+      network: 1,
       contractAddress: '0x1111111111111111111111111111111111111111',
       subgraphUrl: 'https://api.thegraph.com/subgraphs/name/giveth/test',
     });
