@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
+import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

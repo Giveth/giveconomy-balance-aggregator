@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
-import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
+import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { getConnectionOptions } from 'test/test-utils';
 import { Repository } from 'typeorm';
 

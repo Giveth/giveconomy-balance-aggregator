@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as BN from 'bn.js';
-import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
-import { TokenBalanceService } from 'src/modules/tokenBalance/tokenBalance.service';
+import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
+import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
 import {
   generateRandomDecimalNumber,
   getConnectionOptions,

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
+import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
 @Module({
