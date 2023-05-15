@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import * as BN from 'bn.js';
 import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
 import { TokenBalanceService } from 'src/modules/tokenBalance/tokenBalance.service';
@@ -7,6 +7,9 @@ import {
   generateRandomDecimalNumber,
   getConnectionOptions,
 } from 'test/test-utils';
+
+// Define separate address for testing to avoid conflicts with other tests
+const TEST_USER_ADDRESS = '0x000000001';
 
 describe('TokenBalanceService', () => {
   let service: TokenBalanceService;
@@ -27,7 +30,7 @@ describe('TokenBalanceService', () => {
 
     service = module.get<TokenBalanceService>(TokenBalanceService);
 
-    await service.tokenBalanceRepository.query('DELETE FROM token_balance');
+    await service.tokenBalanceRepository.delete({ address: TEST_USER_ADDRESS });
   });
 
   afterEach(async () => {
@@ -37,14 +40,14 @@ describe('TokenBalanceService', () => {
   describe('create', () => {
     it('should create a new balance', async () => {
       const balance = await service.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1,2)',
       });
       expect(balance).toHaveProperty('id');
-      expect(balance.address).toBe('0x123456789');
+      expect(balance.address).toBe(TEST_USER_ADDRESS);
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');
     });
@@ -52,12 +55,14 @@ describe('TokenBalanceService', () => {
 
   describe('get balance single network', () => {
     const baseTokenBalance = {
-      address: '0x123456789',
+      address: TEST_USER_ADDRESS,
       network: 1,
     };
 
     beforeEach(async () => {
-      await service.tokenBalanceRepository.clear();
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS,
+      });
       // Fill sample data
       await service.create({
         ...baseTokenBalance,
@@ -80,7 +85,9 @@ describe('TokenBalanceService', () => {
     });
 
     it('get simple balance', async () => {
-      await service.tokenBalanceRepository.clear();
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS,
+      });
       const data = {
         ...baseTokenBalance,
         balance: '1000000000000000000',
@@ -128,14 +135,16 @@ describe('TokenBalanceService', () => {
 
   describe('get balance multiple networks', () => {
     const baseTokenBalance = {
-      address: '0x123456789',
+      address: TEST_USER_ADDRESS,
     };
     const networks = [1, 2, 3, 4, 5];
     let earliestBalances: Partial<TokenBalance>[] = [];
     let latestBalances: Partial<TokenBalance>[] = [];
 
     beforeEach(async () => {
-      await service.tokenBalanceRepository.clear();
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS,
+      });
       earliestBalances = networks.map(network => ({
         ...baseTokenBalance,
         timeRange: '[2020-01-01,2021-01-01)',

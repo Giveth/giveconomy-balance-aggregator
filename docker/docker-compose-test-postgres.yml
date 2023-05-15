@@ -2,7 +2,6 @@ version: '3.3'
 
 services:
   balance-aggregator-postgres-test:
-    # Use this postgres image https://github.com/Giveth/postgres-givethio
     image: postgres:13.10-bullseye
     restart: always
     environment:

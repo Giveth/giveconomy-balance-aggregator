@@ -1,0 +1,8 @@
+{
+  "type": "postgres",
+  "entities": ["src/modules/**/*.entity{.ts,.js}"],
+  "migrations": ["src/migrations/*{.ts,.js}"],
+  "cli": {
+    "migrationsDir": "src/migrations"
+  }
+}

@@ -4,6 +4,9 @@ import { TokenBalance } from 'src/modules/tokenBalance/tokenBalance.entity';
 import { getConnectionOptions } from 'test/test-utils';
 import { Repository } from 'typeorm';
 
+// Define separate address for testing to avoid conflicts with other tests
+const TEST_USER_ADDRESS = '0x000000002';
+
 describe('TokenBalanceRepository', () => {
   let repository: Repository<TokenBalance>;
 
@@ -24,7 +27,7 @@ describe('TokenBalanceRepository', () => {
     );
 
     // clear table
-    await repository.query('DELETE FROM token_balance');
+    await repository.delete({ address: TEST_USER_ADDRESS });
   });
 
   afterEach(async () => {
@@ -34,7 +37,7 @@ describe('TokenBalanceRepository', () => {
   describe('create test', () => {
     it('create simple entity', async () => {
       const entity = await repository.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
@@ -43,7 +46,7 @@ describe('TokenBalanceRepository', () => {
       const balance = await repository.save(entity);
 
       expect(balance).toHaveProperty('id');
-      expect(balance.address).toBe('0x123456789');
+      expect(balance.address).toBe(TEST_USER_ADDRESS);
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');
     });
@@ -51,7 +54,7 @@ describe('TokenBalanceRepository', () => {
 
   describe('constraints test', () => {
     beforeEach(async () => {
-      await repository.query('DELETE FROM token_balance');
+      await repository.delete({ address: TEST_USER_ADDRESS });
     });
     it('should throw error when address is null', async () => {
       const entity = await repository.create({
@@ -66,7 +69,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should throw error when network is null', async () => {
       const entity = await repository.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: null,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
@@ -77,7 +80,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should throw error when timeRange overlaps', async () => {
       const entity = await repository.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2022-01-01)',
@@ -86,7 +89,7 @@ describe('TokenBalanceRepository', () => {
       await repository.save(entity);
 
       const entity2 = await repository.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2021-12-01,2023-01-01)',
@@ -97,7 +100,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should throw error when blockRange overlaps', async () => {
       const entity = await repository.create({
-        address: '0x123456789',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2022-01-01)',
@@ -106,7 +109,7 @@ describe('TokenBalanceRepository', () => {
       await repository.save(entity);
 
       const entity2 = await repository.create({
-        address: '0x123456789',
+        address: '0x000000002',
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2022-01-01,2023-01-01)',
@@ -118,12 +121,12 @@ describe('TokenBalanceRepository', () => {
 
   describe('insert trigger test', () => {
     beforeEach(async () => {
-      await repository.clear();
+      await repository.delete({ address: TEST_USER_ADDRESS });
     });
 
     it('should close previous balance upper bound when insert new balance', async () => {
       const entity1 = await repository.create({
-        address: '0x123456789',
+        address: '0x000000002',
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,)',
@@ -132,7 +135,7 @@ describe('TokenBalanceRepository', () => {
       let balance1 = await repository.save(entity1);
 
       const entity2 = await repository.create({
-        address: '0x123456789',
+        address: '0x000000002',
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2022-01-01,)',
@@ -164,7 +167,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should only close previous balance if the new balance lower bound be higher than previous balance lower bound', async () => {
       const entity1 = await repository.create({
-        address: '0x123456789',
+        address: '0x000000002',
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,)',
@@ -174,7 +177,7 @@ describe('TokenBalanceRepository', () => {
 
       // check timeRange
       const entity2 = await repository.create({
-        address: '0x123456789',
+        address: '0x000000002',
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2020-01-01,)',
