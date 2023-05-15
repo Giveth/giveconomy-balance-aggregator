@@ -8,13 +8,18 @@ jobs:
     services:
       postgres:
         image: postgres:13.10-bullseye
-        environment:
-          - POSTGRES_DB=balance-aggregator
-          - POSTGRES_USER=postgres
-          - POSTGRES_PASSWORD=postgres
-          - PGDATA=/var/lib/postgresql/data/pgdata
+        env:
+          POSTGRES_DB: balance-aggregator
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          PGDATA: /var/lib/postgresql/data/pgdata
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
-          - "5632:5432"
+          - 5632:5432
     steps:
       - uses: actions/checkout@v1
       - name: Use Node.js
