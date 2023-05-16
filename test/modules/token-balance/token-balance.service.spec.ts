@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as BN from 'bn.js';
+import BN from 'bn.js';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
 import {

@@ -14,8 +14,8 @@ export class CreateTokenBalanceInsertTrigger1684090897120
             address = NEW.address and 
             network = NEW.network and 
             upper_inf("timeRange") and 
-            lower("timeRange") < lower(NEW."timeRange") and
-            lower("blockRange") < lower(NEW."blockRange");
+            lower("timeRange") <= lower(NEW."timeRange") and
+            lower("blockRange") <= lower(NEW."blockRange");
 
           RETURN NEW;
            -- trigger logic
