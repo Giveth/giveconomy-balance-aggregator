@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataFetchState } from 'src/modules/data-fetcher/data-fetch-state.entity';
-import {
-  BlockChainConfig,
-  SingleFetchConfig,
-} from 'src/modules/data-fetcher/load-blockchain-config.service';
+import { SingleFetchConfig } from 'src/modules/data-fetcher/load-blockchain-config.service';
+import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -22,7 +19,7 @@ export class DataFetchStateService {
   /**
    * Initialize a single balance fetch. It initialize the fetch state and return the fetch id if it doesn't exist.
    * Otherwise, it updates subgraphUrl and returns the existing fetch id.
-   * @param networkConfig
+   * @param fetchConfig
    * @returns fetch id
    */
   async initializeFetchConfig(fetchConfig: SingleFetchConfig): Promise<string> {

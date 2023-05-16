@@ -1,10 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { DataFetcherModule } from 'src/modules/data-fetcher/data-fetcher.module';
-import { GraphqlClientAdapterService } from 'src/modules/data-fetcher/graphql-client-adapter.service';
 import {
   LoadBlockchainConfigService,
   SingleFetchConfig,
 } from 'src/modules/data-fetcher/load-blockchain-config.service';
+import { GraphqlClientAdapterService } from 'src/modules/subgraph/graphql-client-adapter.service';
 import TestConfigureModule from 'test/modules/testConfigure.module';
 
 describe('GraphqlClientAdapterService', () => {

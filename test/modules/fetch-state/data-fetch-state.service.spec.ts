@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataFetchState } from 'src/modules/data-fetcher/data-fetch-state.entity';
-import { DataFetchStateService } from 'src/modules/data-fetcher/data-fetch-state.service';
 import { SingleFetchConfig } from 'src/modules/data-fetcher/load-blockchain-config.service';
+import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
+import { DataFetchStateService } from 'src/modules/fetch-state/data-fetch-state.service';
 import { getConnectionOptions } from 'test/test-utils';
 
 const FETCH_CONFIG: SingleFetchConfig = {
