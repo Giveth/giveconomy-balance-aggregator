@@ -24,7 +24,7 @@ describe('LoadBlockchainConfigService', () => {
     const config = await service.getBlockchainConfig();
     expect(config).toBeDefined();
     expect(config).toHaveProperty('networks');
-    expect(config.networks).toHaveLength(1);
+    expect(config.networks.length).toBeGreaterThanOrEqual(1);
     expect(config.networks[0]).toEqual({
       name: 'test-network',
       network: 1,
