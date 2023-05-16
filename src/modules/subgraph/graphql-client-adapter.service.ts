@@ -37,6 +37,7 @@ export class GraphqlClientAdapterService {
         ) {
           id
           time
+          block
           newBalance
           amount
           account
