@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
+export type SubgraphBalanceChangeEntity = {
+  id: string;
+  time: string;
+  block: string;
+  newBalance: string;
+  amount: string;
+  account: string;
+  contractAddress: string;
+};
 @Injectable()
 export class GraphqlClientAdapterService {
   async getBalanceChanges(params: {
@@ -9,7 +18,7 @@ export class GraphqlClientAdapterService {
     sinceTimestamp: number;
     skip: number;
     take?: number;
-  }) {
+  }): Promise<SubgraphBalanceChangeEntity[]> {
     const {
       sinceTimestamp,
       take = 50,
@@ -24,7 +33,7 @@ export class GraphqlClientAdapterService {
           skip: ${skip}
           orderBy: id
           orderDirection: asc
-          where: {time_gt: ${sinceTimestamp}, contractAddress: "${contractAddress}"}
+          where: {time_gt: ${sinceTimestamp}, contractAddress: "${contractAddress.toLowerCase()}"}
         ) {
           id
           time

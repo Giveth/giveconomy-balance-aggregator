@@ -47,6 +47,7 @@ describe('GraphqlClientAdapterService', () => {
       // to have properties id, time,newBalance,amount,account,contractAddress
       expect(balanceChange).toHaveProperty('id');
       expect(balanceChange).toHaveProperty('time');
+      expect(balanceChange).toHaveProperty('block');
       expect(balanceChange).toHaveProperty('newBalance');
       expect(balanceChange).toHaveProperty('amount');
       expect(balanceChange).toHaveProperty('account');

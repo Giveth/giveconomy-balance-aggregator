@@ -38,6 +38,11 @@ describe('TokenBalanceService', () => {
   });
 
   describe('create', () => {
+    beforeEach(async () => {
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS,
+      });
+    });
     it('should create a new balance', async () => {
       const balance = await service.create({
         address: TEST_USER_ADDRESS,
@@ -46,6 +51,28 @@ describe('TokenBalanceService', () => {
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1,2)',
       });
+      expect(balance).toHaveProperty('id');
+      expect(balance.address).toBe(TEST_USER_ADDRESS);
+      expect(balance.network).toBe(1);
+      expect(balance.balance).toBe('1000000000000000000');
+    });
+
+    it('should create a new balance by subgraphBalanceChangeEntity', async () => {
+      const date = new Date('2021-01-02 UTC');
+      const [balance] = await service.saveTokenBalanceFromSubgraphMany(
+        [
+          {
+            id: '---',
+            time: `${date.getTime() / 1000}`,
+            block: '2000',
+            newBalance: '1000000000000000000',
+            amount: '200',
+            account: TEST_USER_ADDRESS,
+            contractAddress: '0x0000000000',
+          },
+        ],
+        1,
+      );
       expect(balance).toHaveProperty('id');
       expect(balance.address).toBe(TEST_USER_ADDRESS);
       expect(balance.network).toBe(1);
@@ -109,7 +136,7 @@ describe('TokenBalanceService', () => {
       let balance = await service.getBalanceSingleUser({
         address: baseTokenBalance.address,
         network: baseTokenBalance.network,
-        timestamp: new Date('2021-01-02 GMT').getTime() / 1000,
+        timestamp: new Date('2021-01-02 UTC').getTime() / 1000,
       });
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('2000000000000000000');

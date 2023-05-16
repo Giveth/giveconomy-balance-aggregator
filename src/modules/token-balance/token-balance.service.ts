@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
+import { SubgraphBalanceChangeEntity } from 'src/modules/subgraph/graphql-client-adapter.service';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { Repository } from 'typeorm';
 
@@ -17,6 +18,30 @@ export class TokenBalanceService {
 
   async create(tokenBalance: Partial<TokenBalance>): Promise<TokenBalance> {
     return this.tokenBalanceRepository.save(tokenBalance);
+  }
+
+  private subgraphBalanceChangeToTokenBalance(
+    balanceChange: SubgraphBalanceChangeEntity,
+    network: number,
+  ): TokenBalance {
+    const tokenBalance = new TokenBalance();
+    tokenBalance.address = balanceChange.account;
+    tokenBalance.balance = balanceChange.newBalance;
+    tokenBalance.network = network;
+    const fromDate = new Date(+balanceChange.time * 1000);
+    tokenBalance.timeRange = `[${fromDate.toISOString()},)`;
+    tokenBalance.blockRange = `[${balanceChange.block},)`;
+    return tokenBalance;
+  }
+
+  async saveTokenBalanceFromSubgraphMany(
+    balanceChanges: SubgraphBalanceChangeEntity[],
+    network: number,
+  ): Promise<TokenBalance[]> {
+    const tokenBalances = balanceChanges.map(balanceChange =>
+      this.subgraphBalanceChangeToTokenBalance(balanceChange, network),
+    );
+    return this.tokenBalanceRepository.save(tokenBalances);
   }
 
   /**

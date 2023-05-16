@@ -10,6 +10,7 @@ const FETCH_CONFIG: SingleFetchConfig = {
   contractAddress: '0x000000001',
   network: 1,
   subgraphUrl: 'empty',
+  fetchInterval: 5000,
 };
 
 describe('DataFetchStateService', () => {

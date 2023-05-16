@@ -10,6 +10,7 @@ export type SingleFetchConfig = {
   network: number;
   contractAddress: string;
   subgraphUrl: string;
+  fetchInterval: number;
 };
 
 export type BlockChainConfig = {

@@ -30,6 +30,7 @@ describe('LoadBlockchainConfigService', () => {
       network: 1,
       contractAddress: '0x1111111111111111111111111111111111111111',
       subgraphUrl: 'https://api.thegraph.com/subgraphs/name/giveth/test',
+      fetchInterval: 5000,
     });
   });
 });
