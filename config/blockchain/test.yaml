@@ -3,3 +3,6 @@ networks:
     network: 1
     contractAddress: '0x1111111111111111111111111111111111111111'
     subgraphUrl: 'https://api.thegraph.com/subgraphs/name/giveth/test'
+  - name: test-graphql
+    contractAddress: '0x31a5aea76af79f592a3a3f46a9f6cb118990433b'
+    subgraphUrl: 'https://api.thegraph.com/subgraphs/name/giveth/giveth-economy-xdai-staging'
