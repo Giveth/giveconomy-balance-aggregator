@@ -109,7 +109,7 @@ describe('TokenBalanceRepository', () => {
       await repository.save(entity);
 
       const entity2 = await repository.create({
-        address: '0x000000002',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2022-01-01,2023-01-01)',
@@ -126,7 +126,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should close previous balance upper bound when insert new balance', async () => {
       const entity1 = await repository.create({
-        address: '0x000000002',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,)',
@@ -135,7 +135,7 @@ describe('TokenBalanceRepository', () => {
       let balance1 = await repository.save(entity1);
 
       const entity2 = await repository.create({
-        address: '0x000000002',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2022-01-01,)',
@@ -167,7 +167,7 @@ describe('TokenBalanceRepository', () => {
 
     it('should only close previous balance if the new balance lower bound be higher than previous balance lower bound', async () => {
       const entity1 = await repository.create({
-        address: '0x000000002',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,)',
@@ -177,7 +177,7 @@ describe('TokenBalanceRepository', () => {
 
       // check timeRange
       const entity2 = await repository.create({
-        address: '0x000000002',
+        address: TEST_USER_ADDRESS,
         network: 1,
         balance: '2000000000000000000',
         timeRange: '[2020-01-01,)',
@@ -189,6 +189,39 @@ describe('TokenBalanceRepository', () => {
       entity2.timeRange = '[2022-01-01,)';
       entity2.blockRange = '[500,)';
       await expect(repository.save(entity2)).rejects.toThrow();
+    });
+
+    it('should support insert balance with same lower bound - multiple balance changes in single block', async () => {
+      const entity1 = await repository.create({
+        address: TEST_USER_ADDRESS,
+        network: 1,
+        balance: '1000000000000000000',
+        timeRange: '[2021-01-01,)',
+        blockRange: '[1000,)',
+      });
+      await repository.save(entity1);
+
+      // check timeRange
+      const entity2 = await repository.create({
+        address: TEST_USER_ADDRESS,
+        network: 1,
+        balance: '2000000000000000000',
+        timeRange: '[2021-01-01,)',
+        blockRange: '[1000,)',
+      });
+      await repository.save(entity2);
+
+      const balances = await repository.find({
+        where: { address: TEST_USER_ADDRESS, network: 1 },
+        order: { id: 'ASC' },
+      });
+
+      expect(balances.length).toEqual(2);
+      expect(balances[0].balance).toEqual('1000000000000000000');
+      expect(balances[1].balance).toEqual('2000000000000000000');
+
+      expect(balances[0].blockRange).toEqual('empty');
+      expect(balances[0].timeRange).toEqual('empty');
     });
   });
 });
