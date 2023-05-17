@@ -78,6 +78,78 @@ describe('TokenBalanceService', () => {
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');
     });
+
+    it('should create multiple subgraphBalanceChangeEntity', async () => {
+      const date = new Date('2021-01-02 UTC');
+      const balances = await service.saveTokenBalanceFromSubgraphMany(
+        [
+          {
+            id: '---',
+            time: `${date.getTime() / 1000}`,
+            block: '2000',
+            newBalance: '1000000000000000000',
+            amount: '200',
+            account: TEST_USER_ADDRESS,
+            contractAddress: '0x0000000000',
+          },
+          {
+            id: '---',
+            time: `${date.getTime() / 1000}`,
+            block: '2000',
+            newBalance: '2000000000000000000',
+            amount: '200',
+            account: TEST_USER_ADDRESS,
+            contractAddress: '0x0000000000',
+          },
+        ],
+        1,
+      );
+      expect(balances.length).toBe(2);
+    });
+
+    it('should not create anything if there is an issue with one of the subgraphBalanceChangeEntity', async () => {
+      // Date 3 is before date 2, overlaps with date 1 and date 2
+      const date1 = new Date('2021-01-02 UTC');
+      const date2 = new Date('2021-01-04 UTC');
+      const date3 = new Date('2021-01-03 UTC');
+      const subgraphEntities = [
+        {
+          id: '---',
+          time: `${date1.getTime() / 1000}`,
+          block: '1000',
+          newBalance: '1000000000000000000',
+          amount: '100',
+          account: TEST_USER_ADDRESS,
+          contractAddress: '0x0000000000',
+        },
+        {
+          id: '---',
+          time: `${date2.getTime() / 1000}`,
+          block: '3000',
+          newBalance: '3000000000000000000',
+          amount: '300',
+          account: TEST_USER_ADDRESS,
+          contractAddress: '0x0000000000',
+        },
+        {
+          id: '---',
+          time: `${date3.getTime() / 1000}`,
+          block: '2000',
+          newBalance: '2000000000000000000',
+          amount: '200',
+          account: TEST_USER_ADDRESS,
+          contractAddress: '0x0000000000',
+        },
+      ];
+
+      await expect(
+        service.saveTokenBalanceFromSubgraphMany(subgraphEntities, 1),
+      ).rejects.toThrow();
+      const count = await service.tokenBalanceRepository.count({
+        where: { address: TEST_USER_ADDRESS },
+      });
+      expect(count).toBe(0);
+    });
   });
 
   describe('get balance single network', () => {

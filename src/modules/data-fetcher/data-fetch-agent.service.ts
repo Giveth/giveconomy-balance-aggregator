@@ -70,7 +70,8 @@ class FetchAgent {
       let skip = paginationSkip;
       let result: SubgraphBalanceChangeEntity[];
 
-      do {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
         result = await this.graphqlClientAdapterService.getBalanceChanges({
           subgraphUrl,
           contractAddress,
@@ -110,7 +111,7 @@ class FetchAgent {
           this.fetchId,
           skip,
         );
-      } while (result.length);
+      }
     } catch (e) {
       console.error(`Error on fetch id ${this.fetchId} - `, e);
     } finally {

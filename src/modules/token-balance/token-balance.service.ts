@@ -41,7 +41,9 @@ export class TokenBalanceService {
     const tokenBalances = balanceChanges.map(balanceChange =>
       this.subgraphBalanceChangeToTokenBalance(balanceChange, network),
     );
-    return this.tokenBalanceRepository.save(tokenBalances);
+    return this.tokenBalanceRepository.manager.transaction(manager =>
+      manager.save(tokenBalances),
+    );
   }
 
   /**
