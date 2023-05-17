@@ -57,16 +57,18 @@ export class TokenBalanceService {
    */
   async getBalanceSingleUser(params: {
     address: string;
-    network?: number | number[];
+    networks?: number | number[];
     timestamp?: number;
     block?: number;
-  }): Promise<{
-    address: string;
-    network?: number;
-    balance?: string;
-    balanceSum?: string;
-  }> {
-    const { address, network, timestamp, block } = params;
+  }): Promise<
+    | {
+        address: string;
+        networks: number[];
+        balance: string;
+      }
+    | undefined
+  > {
+    const { address, networks, timestamp, block } = params;
     let query = this.tokenBalanceRepository
       .createQueryBuilder('tokenBalance')
       .where('tokenBalance.address = :address ', {
@@ -95,26 +97,23 @@ export class TokenBalanceService {
     }
 
     // Single network
-    if (isNumber(network)) {
-      return query
-        .andWhere('tokenBalance.network = :network', {
-          network,
-        })
-        .getOne();
+    if (isNumber(networks)) {
+      query = query.andWhere('tokenBalance.network = :network', {
+        network: networks,
+      });
+    }
+    // Multiple networks
+    else if (Array.isArray(networks)) {
+      query = query.andWhere('tokenBalance.network IN (:...networks)', {
+        networks: networks,
+      });
     }
 
-    // Multiple networks
-    else {
-      if (Array.isArray(network)) {
-        query = query.andWhere('tokenBalance.network IN (:...networks)', {
-          networks: network,
-        });
-      }
-      return query
-        .select('SUM(tokenBalance.balance)', 'balanceSum')
-        .addSelect(['tokenBalance.address'])
-        .groupBy('tokenBalance.address')
-        .getRawOne();
-    }
+    return query
+      .select('SUM(tokenBalance.balance)', 'balance')
+      .addSelect('tokenBalance.address', 'address')
+      .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
+      .groupBy('tokenBalance.address')
+      .getRawOne();
   }
 }
