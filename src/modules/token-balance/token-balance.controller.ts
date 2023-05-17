@@ -20,20 +20,27 @@ class EthereumAddress implements ValidatorConstraintInterface {
   }
 }
 
-class MyQueryParams {
+class QueryParams {
   @IsString()
   @Validate(EthereumAddress)
   @Transform(({ value }) => value.toLowerCase())
   address: string;
 
   @IsOptional()
-  @IsNumber()
-  timestamp?: number;
+  @IsNumber({}, { each: true })
+  @Transform(({ value }) => value.map(v => +v))
+  @IsArray()
+  networks?: number[];
 
   @IsOptional()
-  @IsNumber({}, { each: true })
-  @IsArray()
-  networks?: number | number[];
+  @Transform(({ value }) => +value)
+  @IsNumber()
+  network?: number;
+}
+
+class QueryParamsByTimestamp extends QueryParams {
+  @IsNumber()
+  timestamp: number;
 }
 
 export interface TokenBalanceResponse {
@@ -49,13 +56,14 @@ export class TokenBalanceController {
 
   @Get('by-timestamp')
   async getBalanceByTimestamp(
-    @Query(new ValidationPipe({ transform: true })) params: MyQueryParams,
+    @Query(new ValidationPipe({ transform: true }))
+    params: QueryParamsByTimestamp,
   ): Promise<TokenBalanceResponse> {
-    const { address, timestamp, networks } = params;
+    const { address, timestamp, networks, network } = params;
     const result = await this.tokenBalanceService.getBalanceSingleUser({
       address: address,
       timestamp: timestamp,
-      networks: networks,
+      networks: networks || network,
     });
     if (!result) {
       return null;
@@ -64,6 +72,27 @@ export class TokenBalanceController {
       address: result.address,
       networks: result.networks,
       timestamp: timestamp || 'latest',
+      balance: result.balance,
+    };
+  }
+
+  @Get()
+  async getBalance(
+    @Query(new ValidationPipe({ transform: true }))
+    params: QueryParams,
+  ): Promise<TokenBalanceResponse> {
+    const { address, networks, network } = params;
+    const result = await this.tokenBalanceService.getBalanceSingleUser({
+      address: address,
+      networks: networks || network,
+    });
+    if (!result) {
+      return null;
+    }
+    return {
+      address: result.address,
+      networks: result.networks,
+      timestamp: 'latest',
       balance: result.balance,
     };
   }
