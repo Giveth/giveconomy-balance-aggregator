@@ -10,5 +10,6 @@ import { TokenBalanceService } from './token-balance.service';
   imports: [DatabaseModule, TypeOrmModule.forFeature([TokenBalance])],
   providers: [TokenBalanceService],
   controllers: [TokenBalanceController],
+  exports: [TokenBalanceService],
 })
 export class TokenBalanceModule {}

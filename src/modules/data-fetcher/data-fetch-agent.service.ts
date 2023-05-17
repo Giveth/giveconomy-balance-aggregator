@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { config } from 'rxjs';
 import {
   LoadBlockchainConfigService,
@@ -13,27 +13,41 @@ import { TokenBalanceService } from 'src/modules/token-balance/token-balance.ser
 
 @Injectable()
 export class DataFetchAgentService {
+  private logger = new Logger(DataFetchAgentService.name);
   constructor(
     readonly dataFetchStateService: DataFetchStateService,
     readonly loadBlockChainConfigService: LoadBlockchainConfigService,
     readonly tokenBalanceService: TokenBalanceService,
+    readonly graphqlClientAdapterService: GraphqlClientAdapterService,
   ) {}
 
-  async fetchAll() {
+  async startFetch() {
     const blockChainConfig =
       await this.loadBlockChainConfigService.getBlockchainConfig();
-    for (const fetchConfig of blockChainConfig.networks) {
-      const fetchId = await this.dataFetchStateService.initializeFetchConfig(
-        fetchConfig,
-      );
-      // await this.fetch(fetchId, fetchConfig);
-    }
+    Promise.all(
+      blockChainConfig.networks.map(fetchConfig => {
+        const fetchAgent = new FetchAgent(
+          fetchConfig,
+          this.dataFetchStateService,
+          this.graphqlClientAdapterService,
+          this.tokenBalanceService,
+        );
+        return fetchAgent.run();
+      }),
+    )
+      .then(() => {
+        this.logger.log('All fetch agents are running');
+      })
+      .catch(err => {
+        this.logger.error('Error when starting fetch agents', err);
+      });
   }
 }
 
 class FetchAgent {
   isRunning = false;
   fetchId: string;
+  private logger = new Logger(FetchAgent.name);
   constructor(
     readonly fetchConfig: SingleFetchConfig,
     readonly dataFetchStateService: DataFetchStateService,
@@ -42,7 +56,9 @@ class FetchAgent {
   ) {}
 
   async run() {
-    console.info(`Start fetch - config: ${JSON.stringify(this.fetchConfig)}`);
+    this.logger.log(
+      `Start fetch - config: ${JSON.stringify(this.fetchConfig)}`,
+    );
     this.fetchId = await this.dataFetchStateService.initializeFetchConfig(
       this.fetchConfig,
     );
@@ -55,9 +71,11 @@ class FetchAgent {
   async fetch() {
     // Previous fetch is still running
     if (this.isRunning) {
-      console.debug(`Fetch id ${this.fetchId} is still running`);
+      this.logger.debug(`Fetch id ${this.fetchId} is still running`);
       return;
     }
+
+    this.logger.debug('Fetching id ' + this.fetchId);
 
     try {
       this.isRunning = true;
@@ -67,6 +85,7 @@ class FetchAgent {
       const { lastUpdateTime, paginationSkip } = fetchState;
       const { subgraphUrl, contractAddress } = this.fetchConfig;
       let latestBalanceChange: SubgraphBalanceChangeEntity;
+      const take = 100;
       let skip = paginationSkip;
       let result: SubgraphBalanceChangeEntity[];
 
@@ -77,11 +96,30 @@ class FetchAgent {
           contractAddress,
           sinceTimestamp: lastUpdateTime,
           skip,
+          take,
         });
-        if (result.length === 0) {
+        if (result.length > 0) {
+          latestBalanceChange = result[result.length - 1];
+
+          await this.tokenBalanceService.saveTokenBalanceFromSubgraphMany(
+            result,
+            this.fetchConfig.network,
+          );
+          this.logger.debug(
+            `Fetched ${result.length} for id ${this.fetchId} and persisted`,
+          );
+
+          skip += result.length;
+          await this.dataFetchStateService.updatePaginationSkip(
+            this.fetchId,
+            skip,
+          );
+        }
+
+        if (result.length < take) {
           // Update last update time and block number and reset pagination skip
           if (latestBalanceChange) {
-            console.debug(
+            this.logger.debug(
               `Fetching completed. Fetch id ${this.fetchId}, last update time ${latestBalanceChange.time}`,
             );
             await this.dataFetchStateService.updateLastUpdateTimeAndBlockNumber(
@@ -99,21 +137,9 @@ class FetchAgent {
           }
           break;
         }
-        latestBalanceChange = result[result.length - 1];
-
-        await this.tokenBalanceService.saveTokenBalanceFromSubgraphMany(
-          result,
-          this.fetchConfig.network,
-        );
-
-        skip += result.length;
-        await this.dataFetchStateService.updatePaginationSkip(
-          this.fetchId,
-          skip,
-        );
       }
     } catch (e) {
-      console.error(`Error on fetch id ${this.fetchId} - `, e);
+      this.logger.error(`Error on fetch id ${this.fetchId} - `, e);
     } finally {
       this.isRunning = false;
     }

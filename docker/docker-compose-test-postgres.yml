@@ -12,10 +12,10 @@ services:
     ports:
       - "5632:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data-test:/var/lib/postgresql/data
 
 volumes:
-  db-data:
+  db-data-test:
 
 networks:
   balance-aggregator-test:

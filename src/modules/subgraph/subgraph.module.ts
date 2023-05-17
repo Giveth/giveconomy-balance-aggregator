@@ -4,5 +4,6 @@ import { GraphqlClientAdapterService } from 'src/modules/subgraph/graphql-client
 @Module({
   imports: [],
   providers: [GraphqlClientAdapterService],
+  exports: [GraphqlClientAdapterService],
 })
 export class SubgraphModule {}
