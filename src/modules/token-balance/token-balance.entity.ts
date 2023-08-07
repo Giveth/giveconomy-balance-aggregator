@@ -1,9 +1,12 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   Exclusion,
   Index,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -16,6 +19,7 @@ export class TokenBalance {
   id: number;
 
   // User wallet address
+  @Index()
   @Column()
   address: string;
 
@@ -23,6 +27,7 @@ export class TokenBalance {
   @Column('numeric', { precision: 78, scale: 0 })
   balance: string;
 
+  @Index()
   @Column({ type: 'integer' })
   network: number;
 
@@ -31,4 +36,10 @@ export class TokenBalance {
 
   @Column({ type: 'int4range' })
   blockRange: string;
+
+  @Index()
+  @UpdateDateColumn({
+    type: 'timestamp',
+  })
+  update_at: Date;
 }

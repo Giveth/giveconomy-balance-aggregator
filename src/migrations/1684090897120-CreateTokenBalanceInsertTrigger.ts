@@ -9,7 +9,8 @@ export class CreateTokenBalanceInsertTrigger1684090897120
         BEGIN
           UPDATE token_balance SET
             "timeRange" = tsrange(lower("timeRange"), lower(NEW."timeRange"), '[)'),
-            "blockRange" = int4range(lower("blockRange"), lower(NEW."blockRange"), '[)')
+            "blockRange" = int4range(lower("blockRange"), lower(NEW."blockRange"), '[)'),
+            "update_at" = now()
           WHERE
             address = NEW.address and 
             network = NEW.network and 
@@ -17,6 +18,7 @@ export class CreateTokenBalanceInsertTrigger1684090897120
             lower("timeRange") <= lower(NEW."timeRange") and
             lower("blockRange") <= lower(NEW."blockRange");
 
+          NEW.update_at = now();
           RETURN NEW;
            -- trigger logic
         END;

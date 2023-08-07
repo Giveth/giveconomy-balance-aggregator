@@ -48,6 +48,7 @@ export interface TokenBalanceResponse {
   networks: number | number[];
   timestamp: number | 'latest';
   balance: string;
+  update_at: Date;
 }
 
 @Controller('power-balance')
@@ -73,6 +74,7 @@ export class TokenBalanceController {
       networks: result.networks,
       timestamp: timestamp || 'latest',
       balance: result.balance,
+      update_at: result.update_at,
     };
   }
 
@@ -94,6 +96,7 @@ export class TokenBalanceController {
       networks: result.networks,
       timestamp: 'latest',
       balance: result.balance,
+      update_at: result.update_at,
     };
   }
 }

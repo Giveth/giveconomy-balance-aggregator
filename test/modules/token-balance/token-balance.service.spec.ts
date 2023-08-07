@@ -9,7 +9,9 @@ import {
 } from 'test/test-utils';
 
 // Define separate address for testing to avoid conflicts with other tests
-const TEST_USER_ADDRESS = '0x000000001';
+const TEST_USER_ADDRESS_1 = '0x000000001';
+const TEST_USER_ADDRESS_2 = '0x000000002';
+const TEST_USER_ADDRESS_3 = '0x000000002';
 
 describe('TokenBalanceService', () => {
   let service: TokenBalanceService;
@@ -30,7 +32,9 @@ describe('TokenBalanceService', () => {
 
     service = module.get<TokenBalanceService>(TokenBalanceService);
 
-    await service.tokenBalanceRepository.delete({ address: TEST_USER_ADDRESS });
+    await service.tokenBalanceRepository.delete({
+      address: TEST_USER_ADDRESS_1,
+    });
   });
 
   afterEach(async () => {
@@ -40,19 +44,19 @@ describe('TokenBalanceService', () => {
   describe('create', () => {
     beforeEach(async () => {
       await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
     });
     it('should create a new balance', async () => {
       const balance = await service.create({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
         network: 1,
         balance: '1000000000000000000',
         timeRange: '[2021-01-01,2021-01-02)',
         blockRange: '[1,2)',
       });
       expect(balance).toHaveProperty('id');
-      expect(balance.address).toBe(TEST_USER_ADDRESS);
+      expect(balance.address).toBe(TEST_USER_ADDRESS_1);
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');
     });
@@ -67,14 +71,14 @@ describe('TokenBalanceService', () => {
             block: '2000',
             newBalance: '1000000000000000000',
             amount: '200',
-            account: TEST_USER_ADDRESS,
+            account: TEST_USER_ADDRESS_1,
             contractAddress: '0x0000000000',
           },
         ],
         1,
       );
       expect(balance).toHaveProperty('id');
-      expect(balance.address).toBe(TEST_USER_ADDRESS);
+      expect(balance.address).toBe(TEST_USER_ADDRESS_1);
       expect(balance.network).toBe(1);
       expect(balance.balance).toBe('1000000000000000000');
     });
@@ -89,7 +93,7 @@ describe('TokenBalanceService', () => {
             block: '2000',
             newBalance: '1000000000000000000',
             amount: '200',
-            account: TEST_USER_ADDRESS,
+            account: TEST_USER_ADDRESS_1,
             contractAddress: '0x0000000000',
           },
           {
@@ -98,7 +102,7 @@ describe('TokenBalanceService', () => {
             block: '2000',
             newBalance: '2000000000000000000',
             amount: '200',
-            account: TEST_USER_ADDRESS,
+            account: TEST_USER_ADDRESS_1,
             contractAddress: '0x0000000000',
           },
         ],
@@ -119,7 +123,7 @@ describe('TokenBalanceService', () => {
           block: '1000',
           newBalance: '1000000000000000000',
           amount: '100',
-          account: TEST_USER_ADDRESS,
+          account: TEST_USER_ADDRESS_1,
           contractAddress: '0x0000000000',
         },
         {
@@ -128,7 +132,7 @@ describe('TokenBalanceService', () => {
           block: '3000',
           newBalance: '3000000000000000000',
           amount: '300',
-          account: TEST_USER_ADDRESS,
+          account: TEST_USER_ADDRESS_1,
           contractAddress: '0x0000000000',
         },
         {
@@ -137,7 +141,7 @@ describe('TokenBalanceService', () => {
           block: '2000',
           newBalance: '2000000000000000000',
           amount: '200',
-          account: TEST_USER_ADDRESS,
+          account: TEST_USER_ADDRESS_1,
           contractAddress: '0x0000000000',
         },
       ];
@@ -146,7 +150,7 @@ describe('TokenBalanceService', () => {
         service.saveTokenBalanceFromSubgraphMany(subgraphEntities, 1),
       ).rejects.toThrow();
       const count = await service.tokenBalanceRepository.count({
-        where: { address: TEST_USER_ADDRESS },
+        where: { address: TEST_USER_ADDRESS_1 },
       });
       expect(count).toBe(0);
     });
@@ -154,13 +158,13 @@ describe('TokenBalanceService', () => {
 
   describe('get balance single network', () => {
     const baseTokenBalance = {
-      address: TEST_USER_ADDRESS,
+      address: TEST_USER_ADDRESS_1,
       network: 1,
     };
 
     beforeEach(async () => {
       await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
       // Fill sample data
       await service.create({
@@ -185,23 +189,23 @@ describe('TokenBalanceService', () => {
 
     it('get empty balance', async () => {
       await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
       let balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
       expect(balance).toBeUndefined();
 
       // Single network
       balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
         networks: 1,
       });
       expect(balance).toBeUndefined();
 
       // multiple network
       balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
         networks: [1, 2],
       });
       expect(balance).toBeUndefined();
@@ -209,7 +213,7 @@ describe('TokenBalanceService', () => {
 
     it('get simple balance', async () => {
       await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
       const data = {
         ...baseTokenBalance,
@@ -257,7 +261,7 @@ describe('TokenBalanceService', () => {
 
   describe('get balance multiple networks', () => {
     const baseTokenBalance = {
-      address: TEST_USER_ADDRESS,
+      address: TEST_USER_ADDRESS_1,
     };
     const networks = [1, 2, 3, 4, 5];
     let earliestBalances: Partial<TokenBalance>[] = [];
@@ -265,7 +269,7 @@ describe('TokenBalanceService', () => {
 
     beforeEach(async () => {
       await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS,
+        address: TEST_USER_ADDRESS_1,
       });
       earliestBalances = networks.map(network => ({
         ...baseTokenBalance,
@@ -341,6 +345,202 @@ describe('TokenBalanceService', () => {
 
       expect(result).toBeTruthy();
       expect(result.balance).toEqual(expectedBalance);
+    });
+  });
+
+  describe('get balance update after date', () => {
+    let balances: Partial<TokenBalance>[] = [];
+    const updateDates = [
+      new Date('2001-01-01 GMT'),
+      new Date('2002-01-01 GMT'),
+      new Date('2003-01-01 GMT'),
+    ];
+    beforeEach(async () => {
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS_1,
+      });
+      await service.tokenBalanceRepository.delete({
+        address: TEST_USER_ADDRESS_2,
+      });
+
+      const tokenBalances: Omit<TokenBalance, 'id' | 'update_at'>[] = [
+        {
+          address: TEST_USER_ADDRESS_1,
+          network: 1,
+          balance: '100',
+          timeRange: '[2001-01-01,2002-01-01)',
+          blockRange: '[1000,)',
+        },
+        {
+          address: TEST_USER_ADDRESS_1,
+          network: 2,
+          balance: '200',
+          timeRange: '[2001-01-01,2002-01-01)',
+          blockRange: '[1000,)',
+        },
+        {
+          address: TEST_USER_ADDRESS_2,
+          network: 3,
+          balance: '500',
+          timeRange: '[2001-01-01,2002-01-01)',
+          blockRange: '[1000,)',
+        },
+      ];
+
+      balances = await service.tokenBalanceRepository.save(tokenBalances);
+
+      // Set update_at of balances
+      balances.forEach((balance, index) => {
+        balance.update_at = updateDates[index];
+      });
+
+      await service.tokenBalanceRepository.save(balances);
+
+      // add obsolete token balances
+      const pastTokenBalances: Omit<TokenBalance, 'id' | 'update_at'>[] = [
+        {
+          address: TEST_USER_ADDRESS_1,
+          network: 1,
+          balance: '1000',
+          timeRange: '[1991-01-01,2001-01-01)',
+          blockRange: '[0000,1000)',
+        },
+        {
+          address: TEST_USER_ADDRESS_1,
+          network: 2,
+          balance: '2000',
+          timeRange: '[1991-01-01,2001-01-01)',
+          blockRange: '[0000,1000)',
+        },
+        {
+          address: TEST_USER_ADDRESS_2,
+          network: 3,
+          balance: '500',
+          timeRange: '[1991-01-01,2001-01-01)',
+          blockRange: '[0000,1000)',
+        },
+      ];
+      await service.tokenBalanceRepository.save(pastTokenBalances);
+    });
+
+    it('should return correct value for simple query', async () => {
+      const result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0),
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        address: TEST_USER_ADDRESS_1,
+        networks: [1, 2],
+        balance: '300',
+      });
+      expect(result[1]).toMatchObject({
+        address: TEST_USER_ADDRESS_2,
+        networks: [3],
+        balance: '500',
+      });
+    });
+
+    it('should return balances of specific network - 1', async () => {
+      const result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0),
+        networks: [2, 3],
+      });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        address: TEST_USER_ADDRESS_1,
+        networks: [2],
+        balance: '200',
+      });
+      expect(result[1]).toMatchObject({
+        address: TEST_USER_ADDRESS_2,
+        networks: [3],
+        balance: '500',
+      });
+    });
+
+    it('should return balances of specific network - 2', async () => {
+      const result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0),
+        networks: 3,
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        address: TEST_USER_ADDRESS_2,
+        networks: [3],
+        balance: '500',
+      });
+    });
+
+    it('should return only balances updated after specific date', async () => {
+      // No balance of a user is update after the date
+      const result = await service.getBalanceUpdateAfterDate({
+        since: new Date(updateDates[1].getTime() + 1), // 1ms after update
+      });
+
+      expect(result).toEqual([
+        {
+          address: TEST_USER_ADDRESS_2,
+          networks: [3],
+          balance: '500',
+          max_update_at: updateDates[2],
+        },
+      ]);
+    });
+
+    it('should return balance of a user if one of its balances is updated after the date', async () => {
+      const result = await service.getBalanceUpdateAfterDate({
+        since: new Date(updateDates[1].getTime() - 1), // 1ms before update
+      });
+
+      // Single balance of a user is update after the date
+      expect(result).toEqual([
+        {
+          address: TEST_USER_ADDRESS_1,
+          networks: [1, 2],
+          balance: '300',
+          max_update_at: updateDates[1],
+        },
+        {
+          address: TEST_USER_ADDRESS_2,
+          networks: [3],
+          balance: '500',
+          max_update_at: updateDates[2],
+        },
+      ]);
+    });
+
+    it('should support pagination', async () => {
+      let result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0), // 1ms before update
+        take: 1,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        address: TEST_USER_ADDRESS_1,
+        networks: [1, 2],
+        balance: '300',
+      });
+
+      result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0), // 1ms before update
+        take: 1,
+        skip: 1,
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        address: TEST_USER_ADDRESS_2,
+        networks: [3],
+        balance: '500',
+      });
+
+      result = await service.getBalanceUpdateAfterDate({
+        since: new Date(0), // 1ms before update
+        take: 1,
+        skip: 2,
+      });
+      expect(result).toHaveLength(0);
     });
   });
 });
