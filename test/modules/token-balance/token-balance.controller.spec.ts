@@ -3,6 +3,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { TokenBalanceController } from 'src/modules/token-balance/token-balance.controller';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import { getConnectionOptions } from 'test/test-utils';
 import { Repository } from 'typeorm';
 
@@ -18,9 +19,9 @@ describe('tokenBalanceController test cases', () => {
       imports: [
         TypeOrmModule.forRoot({
           ...options,
-          entities: [TokenBalance],
+          entities: [TokenBalance, TokenBalanceUpdate],
         }),
-        TypeOrmModule.forFeature([TokenBalance]),
+        TypeOrmModule.forFeature([TokenBalance, TokenBalanceUpdate]),
       ],
       providers: [TokenBalanceService],
       controllers: [TokenBalanceController],

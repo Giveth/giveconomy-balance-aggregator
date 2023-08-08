@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import BN from 'bn.js';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import {
   generateRandomDecimalNumber,
   getConnectionOptions,
@@ -22,9 +23,9 @@ describe('TokenBalanceService', () => {
       imports: [
         TypeOrmModule.forRoot({
           ...options,
-          entities: [TokenBalance],
+          entities: [TokenBalance, TokenBalanceUpdate],
         }),
-        TypeOrmModule.forFeature([TokenBalance]),
+        TypeOrmModule.forFeature([TokenBalance, TokenBalanceUpdate]),
       ],
 
       providers: [TokenBalanceService],
@@ -34,6 +35,15 @@ describe('TokenBalanceService', () => {
 
     await service.tokenBalanceRepository.delete({
       address: TEST_USER_ADDRESS_1,
+    });
+    await service.tokenBalanceRepository.delete({
+      address: TEST_USER_ADDRESS_2,
+    });
+    await service.tokenBalanceUpdateRepository.delete({
+      address: TEST_USER_ADDRESS_1,
+    });
+    await service.tokenBalanceUpdateRepository.delete({
+      address: TEST_USER_ADDRESS_2,
     });
   });
 
@@ -356,12 +366,8 @@ describe('TokenBalanceService', () => {
       new Date('2003-01-01 GMT'),
     ];
     beforeEach(async () => {
-      await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS_1,
-      });
-      await service.tokenBalanceRepository.delete({
-        address: TEST_USER_ADDRESS_2,
-      });
+      await service.tokenBalanceRepository.clear();
+      await service.tokenBalanceUpdateRepository.clear();
 
       const tokenBalances: Omit<TokenBalance, 'id' | 'update_at'>[] = [
         {
@@ -389,13 +395,6 @@ describe('TokenBalanceService', () => {
 
       balances = await service.tokenBalanceRepository.save(tokenBalances);
 
-      // Set update_at of balances
-      balances.forEach((balance, index) => {
-        balance.update_at = updateDates[index];
-      });
-
-      await service.tokenBalanceRepository.save(balances);
-
       // add obsolete token balances
       const pastTokenBalances: Omit<TokenBalance, 'id' | 'update_at'>[] = [
         {
@@ -421,10 +420,19 @@ describe('TokenBalanceService', () => {
         },
       ];
       await service.tokenBalanceRepository.save(pastTokenBalances);
+
+      // Set update_at of balances
+      for (let i = 0; i < balances.length; i++) {
+        const balance = balances[i];
+        await service.tokenBalanceUpdateRepository.update(
+          { address: balance.address },
+          { update_at: updateDates[i] },
+        );
+      }
     });
 
     it('should return correct value for simple query', async () => {
-      const result = await service.getBalanceUpdateAfterDate({
+      const result = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
       });
 
@@ -442,7 +450,7 @@ describe('TokenBalanceService', () => {
     });
 
     it('should return balances of specific network - 1', async () => {
-      const result = await service.getBalanceUpdateAfterDate({
+      const result = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
         networks: [2, 3],
       });
@@ -460,7 +468,7 @@ describe('TokenBalanceService', () => {
     });
 
     it('should return balances of specific network - 2', async () => {
-      const result = await service.getBalanceUpdateAfterDate({
+      const result = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
         networks: 3,
       });
@@ -474,7 +482,7 @@ describe('TokenBalanceService', () => {
 
     it('should return only balances updated after specific date', async () => {
       // No balance of a user is update after the date
-      const result = await service.getBalanceUpdateAfterDate({
+      const result = await service.getBalancesUpdateAfterDate({
         since: new Date(updateDates[1].getTime() + 1), // 1ms after update
       });
 
@@ -483,13 +491,13 @@ describe('TokenBalanceService', () => {
           address: TEST_USER_ADDRESS_2,
           networks: [3],
           balance: '500',
-          max_update_at: updateDates[2],
+          update_at: updateDates[2],
         },
       ]);
     });
 
     it('should return balance of a user if one of its balances is updated after the date', async () => {
-      const result = await service.getBalanceUpdateAfterDate({
+      const result = await service.getBalancesUpdateAfterDate({
         since: new Date(updateDates[1].getTime() - 1), // 1ms before update
       });
 
@@ -499,19 +507,19 @@ describe('TokenBalanceService', () => {
           address: TEST_USER_ADDRESS_1,
           networks: [1, 2],
           balance: '300',
-          max_update_at: updateDates[1],
+          update_at: updateDates[1],
         },
         {
           address: TEST_USER_ADDRESS_2,
           networks: [3],
           balance: '500',
-          max_update_at: updateDates[2],
+          update_at: updateDates[2],
         },
       ]);
     });
 
     it('should support pagination', async () => {
-      let result = await service.getBalanceUpdateAfterDate({
+      let result = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
       });
@@ -523,7 +531,7 @@ describe('TokenBalanceService', () => {
         balance: '300',
       });
 
-      result = await service.getBalanceUpdateAfterDate({
+      result = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
         skip: 1,
@@ -535,7 +543,7 @@ describe('TokenBalanceService', () => {
         balance: '500',
       });
 
-      result = await service.getBalanceUpdateAfterDate({
+      result = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
         skip: 2,

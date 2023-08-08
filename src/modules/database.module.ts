@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
 @Module({
@@ -19,7 +20,7 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           username: configService.get<string>('DATABASE_USER'),
           password: configService.get<string>('DATABASE_PASSWORD'),
           database: configService.get<string>('DATABASE_NAME'),
-          entities: [TokenBalance, DataFetchState],
+          entities: [TokenBalance, TokenBalanceUpdate, DataFetchState],
           synchronize: process.env.NODE_ENV !== 'production',
         };
         return options;
