@@ -348,7 +348,6 @@ describe('TokenBalanceService', () => {
   });
 
   describe('get balance update after date', () => {
-    let balances: Partial<TokenBalance>[] = [];
     const updateDates = [
       new Date('2001-01-01 GMT'),
       new Date('2002-01-01 GMT'),
@@ -382,7 +381,7 @@ describe('TokenBalanceService', () => {
         },
       ];
 
-      balances = await service.tokenBalanceRepository.save(tokenBalances);
+      const balances = await service.tokenBalanceRepository.save(tokenBalances);
 
       // add obsolete token balances
       const pastTokenBalances: Omit<TokenBalance, 'id' | 'update_at'>[] = [

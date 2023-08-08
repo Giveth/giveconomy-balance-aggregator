@@ -1,7 +1,8 @@
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsDate,
   IsNumber,
   IsOptional,
   IsString,
@@ -43,11 +44,45 @@ class QueryParamsByTimestamp extends QueryParams {
   timestamp: number;
 }
 
+class QueryParamsUpdatedAfterDate {
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  @Transform(({ value }) => value.map(v => +v))
+  @IsArray()
+  networks?: number[] | number;
+
+  @IsOptional()
+  @Transform(({ value }) => +value)
+  @IsNumber()
+  network?: number;
+
+  @IsDate()
+  @Type(() => Date)
+  date: Date;
+
+  @IsOptional()
+  @IsNumber()
+  take?: number;
+
+  @IsOptional()
+  @IsNumber()
+  skip?: number;
+}
 export interface TokenBalanceResponse {
   address: string;
   networks: number | number[];
   timestamp: number | 'latest';
   balance: string;
+}
+
+export interface UpdatedAfterDateResponse {
+  count: number;
+  balances: {
+    address: string;
+    networks?: number | number[];
+    balance: string;
+    update_at: Date;
+  }[];
 }
 
 @Controller('power-balance')
@@ -94,6 +129,25 @@ export class TokenBalanceController {
       networks: result.networks,
       timestamp: 'latest',
       balance: result.balance,
+    };
+  }
+
+  @Get()
+  async getBalanceUpdatedAfterDate(
+    @Query(new ValidationPipe({ transform: true }))
+    params: QueryParamsUpdatedAfterDate,
+  ): Promise<UpdatedAfterDateResponse> {
+    const { date, networks, network, take, skip } = params;
+    const [balances, count] =
+      await this.tokenBalanceService.getBalancesUpdateAfterDate({
+        since: date,
+        networks: networks || network,
+        take,
+        skip,
+      });
+    return {
+      count,
+      balances,
     };
   }
 }
