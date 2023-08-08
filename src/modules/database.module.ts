@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
-import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
 @Module({

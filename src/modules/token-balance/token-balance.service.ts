@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubgraphBalanceChangeEntity } from 'src/modules/subgraph/graphql-client-adapter.service';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
-import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -135,54 +135,55 @@ export class TokenBalanceService {
     take?: number;
     skip?: number;
   }): Promise<
-    {
-      address: string;
-      networks?: number | number[];
-      balance: string;
-      update_at: Date;
-    }[]
+    [
+      {
+        address: string;
+        networks?: number | number[];
+        balance: string;
+        update_at: Date;
+      }[],
+      number,
+    ]
   > {
-    const query = this.tokenBalanceUpdateRepository
+    const [updates, numbers] = await this.tokenBalanceUpdateRepository
       .createQueryBuilder('tokenBalanceUpdate')
-      .select('tokenBalanceUpdate.update_at', 'update_at')
-      .addSelect('tokenBalanceUpdate.address', 'address')
+      // .select(['address'])
       .where('tokenBalanceUpdate.update_at > :since', { since })
-      .innerJoinAndSelect(
-        innerQuery => {
-          let _innerQuery = innerQuery
-            .from(TokenBalance, 'tokenBalance')
-            .addSelect('SUM(tokenBalance.balance)', 'balance')
-            .addSelect('tokenBalance.address', 'address')
-            .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
-            .where('upper_inf(tokenBalance.blockRange)');
-          // Single network
-          if (isNumber(networks)) {
-            _innerQuery = _innerQuery.andWhere(
-              'tokenBalance.network = :network',
-              {
-                network: networks,
-              },
-            );
-          }
-          // Multiple networks
-          else if (Array.isArray(networks)) {
-            _innerQuery = _innerQuery.andWhere(
-              'tokenBalance.network IN (:...networks)',
-              {
-                networks: networks,
-              },
-            );
-          }
-          return _innerQuery.groupBy('tokenBalance.address');
-        },
-        'tokenBalance',
-        '"tokenBalance".address = tokenBalanceUpdate.address',
-        ['tokenBalance.balance', 'tokenBalance.networks'],
-      )
-      .orderBy('tokenBalanceUpdate.update_at', 'ASC')
-      .limit(take)
-      .offset(skip);
+      .take(take)
+      .skip(skip)
+      .getManyAndCount();
 
-    return query.getRawMany();
+    if (updates.length === 0) {
+      return [[], numbers];
+    }
+
+    let query = this.tokenBalanceRepository
+      .createQueryBuilder('tokenBalance')
+      .select('SUM(tokenBalance.balance)', 'balance')
+      .addSelect('tokenBalance.address', 'address')
+      .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
+      .addSelect('MAX(tokenBalance.update_at)', 'update_at')
+      .where('upper_inf(tokenBalance.blockRange)')
+      .andWhere(`tokenBalance.address IN (:...address)`, {
+        address: updates.map(entity => entity.address),
+      });
+
+    if (isNumber(networks)) {
+      query = query.andWhere('tokenBalance.network = :network', {
+        network: networks,
+      });
+    }
+    // Multiple networks
+    else if (Array.isArray(networks)) {
+      query = query.andWhere('tokenBalance.network IN (:...networks)', {
+        networks: networks,
+      });
+    }
+
+    const balances = await query
+      .groupBy('tokenBalance.address')
+      .orderBy('update_at', 'ASC')
+      .getRawMany();
+    return [balances, numbers];
   }
 }

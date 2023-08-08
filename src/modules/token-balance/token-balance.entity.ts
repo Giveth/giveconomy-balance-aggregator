@@ -4,6 +4,7 @@ import {
   Exclusion,
   Index,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -34,4 +35,9 @@ export class TokenBalance {
 
   @Column({ type: 'int4range' })
   blockRange: string;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+  })
+  update_at: Date;
 }

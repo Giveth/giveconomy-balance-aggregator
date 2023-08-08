@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import BN from 'bn.js';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
-import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance.update.entity';
 import {
   generateRandomDecimalNumber,
   getConnectionOptions,
@@ -12,7 +12,6 @@ import {
 // Define separate address for testing to avoid conflicts with other tests
 const TEST_USER_ADDRESS_1 = '0x000000001';
 const TEST_USER_ADDRESS_2 = '0x000000002';
-const TEST_USER_ADDRESS_3 = '0x000000002';
 
 describe('TokenBalanceService', () => {
   let service: TokenBalanceService;
@@ -33,18 +32,8 @@ describe('TokenBalanceService', () => {
 
     service = module.get<TokenBalanceService>(TokenBalanceService);
 
-    await service.tokenBalanceRepository.delete({
-      address: TEST_USER_ADDRESS_1,
-    });
-    await service.tokenBalanceRepository.delete({
-      address: TEST_USER_ADDRESS_2,
-    });
-    await service.tokenBalanceUpdateRepository.delete({
-      address: TEST_USER_ADDRESS_1,
-    });
-    await service.tokenBalanceUpdateRepository.delete({
-      address: TEST_USER_ADDRESS_2,
-    });
+    await service.tokenBalanceRepository.clear();
+    await service.tokenBalanceUpdateRepository.clear();
   });
 
   afterEach(async () => {
@@ -428,14 +417,17 @@ describe('TokenBalanceService', () => {
           { address: balance.address },
           { update_at: updateDates[i] },
         );
+        balance.update_at = updateDates[i];
+        await service.tokenBalanceRepository.save(balance);
       }
     });
 
     it('should return correct value for simple query', async () => {
-      const result = await service.getBalancesUpdateAfterDate({
+      const [result, count] = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
       });
 
+      expect(count).toEqual(2);
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({
         address: TEST_USER_ADDRESS_1,
@@ -450,7 +442,7 @@ describe('TokenBalanceService', () => {
     });
 
     it('should return balances of specific network - 1', async () => {
-      const result = await service.getBalancesUpdateAfterDate({
+      const [result] = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
         networks: [2, 3],
       });
@@ -468,7 +460,7 @@ describe('TokenBalanceService', () => {
     });
 
     it('should return balances of specific network - 2', async () => {
-      const result = await service.getBalancesUpdateAfterDate({
+      const [result] = await service.getBalancesUpdateAfterDate({
         since: new Date(0),
         networks: 3,
       });
@@ -482,7 +474,7 @@ describe('TokenBalanceService', () => {
 
     it('should return only balances updated after specific date', async () => {
       // No balance of a user is update after the date
-      const result = await service.getBalancesUpdateAfterDate({
+      const [result] = await service.getBalancesUpdateAfterDate({
         since: new Date(updateDates[1].getTime() + 1), // 1ms after update
       });
 
@@ -497,7 +489,7 @@ describe('TokenBalanceService', () => {
     });
 
     it('should return balance of a user if one of its balances is updated after the date', async () => {
-      const result = await service.getBalancesUpdateAfterDate({
+      const [result] = await service.getBalancesUpdateAfterDate({
         since: new Date(updateDates[1].getTime() - 1), // 1ms before update
       });
 
@@ -519,11 +511,12 @@ describe('TokenBalanceService', () => {
     });
 
     it('should support pagination', async () => {
-      let result = await service.getBalancesUpdateAfterDate({
+      let [result, count] = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
       });
 
+      expect(count).toEqual(2);
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         address: TEST_USER_ADDRESS_1,
@@ -531,11 +524,12 @@ describe('TokenBalanceService', () => {
         balance: '300',
       });
 
-      result = await service.getBalancesUpdateAfterDate({
+      [result, count] = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
         skip: 1,
       });
+      expect(count).toEqual(2);
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         address: TEST_USER_ADDRESS_2,
@@ -543,11 +537,12 @@ describe('TokenBalanceService', () => {
         balance: '500',
       });
 
-      result = await service.getBalancesUpdateAfterDate({
+      [result, count] = await service.getBalancesUpdateAfterDate({
         since: new Date(0), // 1ms before update
         take: 1,
         skip: 2,
       });
+      expect(count).toEqual(2);
       expect(result).toHaveLength(0);
     });
   });
