@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { FetchStateModule } from 'src/modules/fetch-state/fetch-state.module';
 import { GraphqlClientAdapterService } from 'src/modules/subgraph/graphql-client-adapter.service';
 import { SubgraphModule } from 'src/modules/subgraph/subgraph.module';
