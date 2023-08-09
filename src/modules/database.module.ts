@@ -24,6 +24,7 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           entities: [TokenBalance, TokenBalanceUpdate, DataFetchState],
           synchronize: process.env.NODE_ENV !== 'production',
           migrations: [CreateTokenBalanceInsertTrigger1684090897120],
+          ssl: configService.get<string>('DATABASE_SSL') === 'true',
         };
         return options;
       },
