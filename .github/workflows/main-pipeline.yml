@@ -48,6 +48,14 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
       - name: Build image and push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
