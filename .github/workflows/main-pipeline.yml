@@ -1,0 +1,62 @@
+name:  master-pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15.3-alpine
+        env:
+          POSTGRES_DB: balance-aggregator
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          PGDATA: /var/lib/postgresql/data/pgdata
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5632:5432
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.20.0
+      - name: Install dependencies
+        run: npm ci
+      - name: Run lint
+        run: npm run lint
+      - name: Run build
+        run: npm run build
+      - name: Run tests
+        run: npm run test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Build image and push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          registry: ghcr.io
+          repository: giveth/giveconomy-balance-aggregator
+          add_git_labels: true
+          # Add branch name to docker image tag @see{@link https://github.com/docker/build-push-action/tree/releases/v1#tag_with_ref}
+          tag_with_ref: true
+          # Add commit hash to docker image tag @see{@link https://github.com/docker/build-push-action/tree/releases/v1#tag_with_sha}
+          tag_with_sha: true
