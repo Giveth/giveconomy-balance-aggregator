@@ -13,11 +13,12 @@ services:
       - "5632:5432"
     volumes:
       - db-data-test:/var/lib/postgresql/data
+    networks:
+      - balance-aggregator-test
 
 volumes:
   db-data-test:
 
 networks:
   balance-aggregator-test:
-    external: true
 

@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { config } from 'rxjs';
 import {
   LoadBlockchainConfigService,
   SingleFetchConfig,
@@ -24,6 +23,8 @@ export class DataFetchAgentService {
   async startFetch() {
     const blockChainConfig =
       await this.loadBlockChainConfigService.getBlockchainConfig();
+
+    await this.dataFetchStateService.resetFetchStatesActiveStatus();
     Promise.all(
       blockChainConfig.networks.map(fetchConfig => {
         const fetchAgent = new FetchAgent(
@@ -87,10 +88,16 @@ class FetchAgent {
       let latestBalanceChange: SubgraphBalanceChangeEntity;
       const take = 100;
       let skip = paginationSkip;
-      let result: SubgraphBalanceChangeEntity[];
+      let result: {
+        balanceChanges: SubgraphBalanceChangeEntity[];
+        block: { timestamp: number; number: number };
+      };
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
+        this.logger.debug(`
+Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${lastUpdateTime} - skip ${skip} - take ${take}
+        `);
         result = await this.graphqlClientAdapterService.getBalanceChanges({
           subgraphUrl,
           contractAddress,
@@ -98,25 +105,26 @@ class FetchAgent {
           skip,
           take,
         });
-        if (result.length > 0) {
-          latestBalanceChange = result[result.length - 1];
+        const { balanceChanges } = result;
+        if (balanceChanges.length > 0) {
+          latestBalanceChange = balanceChanges[balanceChanges.length - 1];
 
           await this.tokenBalanceService.saveTokenBalanceFromSubgraphMany(
-            result,
+            balanceChanges,
             this.fetchConfig.network,
           );
           this.logger.debug(
-            `Fetched ${result.length} for id ${this.fetchId} and persisted`,
+            `Fetched ${balanceChanges.length} for id ${this.fetchId} and persisted`,
           );
 
-          skip += result.length;
+          skip += balanceChanges.length;
           await this.dataFetchStateService.updatePaginationSkip(
             this.fetchId,
             skip,
           );
         }
 
-        if (result.length < take) {
+        if (balanceChanges.length < take) {
           // Update last update time and block number and reset pagination skip
           if (latestBalanceChange) {
             this.logger.debug(
@@ -138,6 +146,11 @@ class FetchAgent {
           break;
         }
       }
+
+      await this.dataFetchStateService.updateLatestIndexedBlockNumberAndTimestamp(
+        this.fetchId,
+        result.block,
+      );
     } catch (e) {
       this.logger.error(`Error on fetch id ${this.fetchId} - `, e);
     } finally {

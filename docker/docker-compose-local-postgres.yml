@@ -14,9 +14,10 @@ services:
       - "5532:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - balance-aggregator
 volumes:
   db-data:
 
 networks:
   balance-aggregator:
-    external: true

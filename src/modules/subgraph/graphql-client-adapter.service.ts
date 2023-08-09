@@ -18,7 +18,10 @@ export class GraphqlClientAdapterService {
     sinceTimestamp: number;
     skip: number;
     take?: number;
-  }): Promise<SubgraphBalanceChangeEntity[]> {
+  }): Promise<{
+    balanceChanges: SubgraphBalanceChangeEntity[];
+    block: { timestamp: number; number: number };
+  }> {
     const {
       sinceTimestamp,
       take = 50,
@@ -43,10 +46,21 @@ export class GraphqlClientAdapterService {
           account
           contractAddress
         }
+        
+        _meta {
+          block {
+            number
+            timestamp
+          }
+        }
       }
       `;
 
     const result = await axios.post(subgraphUrl, { query });
-    return result.data.data.balanceChanges;
+    const { balanceChanges, _meta } = result.data.data;
+    return {
+      balanceChanges,
+      block: _meta.block,
+    };
   }
 }

@@ -33,7 +33,7 @@ describe('GraphqlClientAdapterService', () => {
 
   it('should fetch sample balance changes', async () => {
     expect(config).toBeDefined();
-    const balanceChanges = await service.getBalanceChanges({
+    const { balanceChanges, block } = await service.getBalanceChanges({
       subgraphUrl: config.subgraphUrl,
       contractAddress: config.contractAddress,
       sinceTimestamp: 0,
@@ -53,10 +53,16 @@ describe('GraphqlClientAdapterService', () => {
       expect(balanceChange).toHaveProperty('account');
       expect(balanceChange).toHaveProperty('contractAddress');
     });
+
+    expect(block).toBeDefined();
+    expect(block).toHaveProperty('number');
+    expect(block).toHaveProperty('timestamp');
+    expect(block.number).toBeGreaterThan(0);
+    expect(block.timestamp).toBeGreaterThan(0);
   });
 
   it('should fetch balance changes are sorted by time', async () => {
-    const balanceChanges = await service.getBalanceChanges({
+    const { balanceChanges } = await service.getBalanceChanges({
       subgraphUrl: config.subgraphUrl,
       contractAddress: config.contractAddress,
       sinceTimestamp: 0,

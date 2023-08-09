@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CreateTokenBalanceInsertTrigger1684090897120 } from 'src/migrations/1684090897120-CreateTokenBalanceInsertTrigger';
 import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { ConnectionOptions, DataSource } from 'typeorm';
 
@@ -19,8 +21,9 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           username: configService.get<string>('DATABASE_USER'),
           password: configService.get<string>('DATABASE_PASSWORD'),
           database: configService.get<string>('DATABASE_NAME'),
-          entities: [TokenBalance, DataFetchState],
+          entities: [TokenBalance, TokenBalanceUpdate, DataFetchState],
           synchronize: process.env.NODE_ENV !== 'production',
+          migrations: [CreateTokenBalanceInsertTrigger1684090897120],
         };
         return options;
       },
@@ -29,6 +32,7 @@ import { ConnectionOptions, DataSource } from 'typeorm';
         if (options.synchronize) {
           await dataSource.synchronize();
         }
+        await dataSource.runMigrations({});
         return dataSource;
       },
     }),

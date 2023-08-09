@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubgraphBalanceChangeEntity } from 'src/modules/subgraph/graphql-client-adapter.service';
+import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
 export class TokenBalanceService {
   constructor(
+    @InjectRepository(TokenBalanceUpdate)
+    readonly tokenBalanceUpdateRepository: Repository<TokenBalanceUpdate>,
     @InjectRepository(TokenBalance)
     readonly tokenBalanceRepository: Repository<TokenBalance>,
   ) {}
@@ -55,7 +58,12 @@ export class TokenBalanceService {
    *   block?: number; // block number
    * }
    */
-  async getBalanceSingleUser(params: {
+  async getBalanceSingleUser({
+    address,
+    networks,
+    timestamp,
+    block,
+  }: {
     address: string;
     networks?: number | number[];
     timestamp?: number;
@@ -68,7 +76,6 @@ export class TokenBalanceService {
       }
     | undefined
   > {
-    const { address, networks, timestamp, block } = params;
     let query = this.tokenBalanceRepository
       .createQueryBuilder('tokenBalance')
       .where('tokenBalance.address = :address ', {
@@ -115,5 +122,68 @@ export class TokenBalanceService {
       .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
       .groupBy('tokenBalance.address')
       .getRawOne();
+  }
+
+  async getBalancesUpdateAfterDate({
+    since,
+    networks,
+    take = 100,
+    skip = 0,
+  }: {
+    since: Date;
+    networks?: number | number[];
+    take?: number;
+    skip?: number;
+  }): Promise<
+    [
+      {
+        address: string;
+        networks?: number | number[];
+        balance: string;
+        update_at: Date;
+      }[],
+      number,
+    ]
+  > {
+    const [updates, numbers] = await this.tokenBalanceUpdateRepository
+      .createQueryBuilder('tokenBalanceUpdate')
+      // .select(['address'])
+      .where('tokenBalanceUpdate.update_at > :since', { since })
+      .take(take)
+      .skip(skip)
+      .getManyAndCount();
+
+    if (updates.length === 0) {
+      return [[], numbers];
+    }
+
+    let query = this.tokenBalanceRepository
+      .createQueryBuilder('tokenBalance')
+      .select('SUM(tokenBalance.balance)', 'balance')
+      .addSelect('tokenBalance.address', 'address')
+      .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
+      .addSelect('MAX(tokenBalance.update_at)', 'update_at')
+      .where('upper_inf(tokenBalance.blockRange)')
+      .andWhere(`tokenBalance.address IN (:...address)`, {
+        address: updates.map(entity => entity.address),
+      });
+
+    if (isNumber(networks)) {
+      query = query.andWhere('tokenBalance.network = :network', {
+        network: networks,
+      });
+    }
+    // Multiple networks
+    else if (Array.isArray(networks)) {
+      query = query.andWhere('tokenBalance.network IN (:...networks)', {
+        networks: networks,
+      });
+    }
+
+    const balances = await query
+      .groupBy('tokenBalance.address')
+      .orderBy('update_at', 'ASC')
+      .getRawMany();
+    return [balances, numbers];
   }
 }

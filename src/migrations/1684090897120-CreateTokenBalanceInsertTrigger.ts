@@ -16,6 +16,10 @@ export class CreateTokenBalanceInsertTrigger1684090897120
             upper_inf("timeRange") and 
             lower("timeRange") <= lower(NEW."timeRange") and
             lower("blockRange") <= lower(NEW."blockRange");
+            
+          INSERT INTO token_balance_update (address, update_at) 
+            VALUES (NEW.address, now())
+            ON CONFLICT (address) DO UPDATE SET update_at = now(); 
 
           RETURN NEW;
            -- trigger logic
