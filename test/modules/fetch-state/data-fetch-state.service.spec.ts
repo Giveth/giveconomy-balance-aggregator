@@ -62,6 +62,7 @@ describe('DataFetchStateService', () => {
         paginationSkip: 0,
         latestIndexedBlockNumber: 0,
         latestIndexedBlockTimestamp: 0,
+        isActive: true,
       });
     });
 
@@ -92,6 +93,7 @@ describe('DataFetchStateService', () => {
         paginationSkip: 300,
         latestIndexedBlockNumber: 888,
         latestIndexedBlockTimestamp: 9999,
+        isActive: true,
       });
     });
   });
@@ -161,6 +163,7 @@ describe('DataFetchStateService', () => {
         paginationSkip: 0,
         latestIndexedBlockNumber: 0,
         latestIndexedBlockTimestamp: 0,
+        isActive: true,
       });
     });
   });
@@ -246,6 +249,28 @@ describe('DataFetchStateService', () => {
 
     it('should return 0 when no state is found', async () => {
       await service.dataFetchStateRepository.clear();
+      const leastIndexedBlockNumber =
+        await service.getLeastIndexedBlocksTimestamp();
+      expect(leastIndexedBlockNumber).toEqual(0);
+    });
+
+    it('should only return active ones', async () => {
+      await service.resetFetchStatesActiveStatus();
+      const expectedvalue = 54343423;
+      await service.dataFetchStateRepository.update(
+        { id: id_3 },
+        {
+          isActive: true,
+          latestIndexedBlockTimestamp: expectedvalue,
+        },
+      );
+      const leastIndexedBlockNumber =
+        await service.getLeastIndexedBlocksTimestamp();
+      expect(leastIndexedBlockNumber).toEqual(expectedvalue);
+    });
+
+    it('should return 0 when no active state is found', async () => {
+      await service.resetFetchStatesActiveStatus();
       const leastIndexedBlockNumber =
         await service.getLeastIndexedBlocksTimestamp();
       expect(leastIndexedBlockNumber).toEqual(0);

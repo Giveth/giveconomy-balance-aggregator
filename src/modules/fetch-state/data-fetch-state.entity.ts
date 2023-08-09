@@ -25,4 +25,7 @@ export class DataFetchState {
 
   @Column()
   latestIndexedBlockTimestamp: number;
+
+  @Column({ default: false })
+  isActive: boolean;
 }

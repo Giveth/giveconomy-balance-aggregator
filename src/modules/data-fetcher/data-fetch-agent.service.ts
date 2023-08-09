@@ -23,6 +23,8 @@ export class DataFetchAgentService {
   async startFetch() {
     const blockChainConfig =
       await this.loadBlockChainConfigService.getBlockchainConfig();
+
+    await this.dataFetchStateService.resetFetchStatesActiveStatus();
     Promise.all(
       blockChainConfig.networks.map(fetchConfig => {
         const fetchAgent = new FetchAgent(

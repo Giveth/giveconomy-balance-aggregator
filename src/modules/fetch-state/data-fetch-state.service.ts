@@ -17,6 +17,13 @@ export class DataFetchStateService {
       fetchConfig.network
     }`;
   }
+
+  /**
+   * Reset all fetch states' active status to false
+   */
+  async resetFetchStatesActiveStatus() {
+    await this.dataFetchStateRepository.update({}, { isActive: false });
+  }
   /**
    * Initialize a single balance fetch. It initialize the fetch state and return the fetch id if it doesn't exist.
    * Otherwise, it updates subgraphUrl and returns the existing fetch id.
@@ -38,8 +45,9 @@ export class DataFetchStateService {
         paginationSkip: 0,
         latestIndexedBlockNumber: 0,
         latestIndexedBlockTimestamp: 0,
+        isActive: true,
       })
-      .orIgnore()
+      .orUpdate(['isActive'], ['id'])
       .execute();
     return fetchId;
   }
@@ -88,7 +96,8 @@ export class DataFetchStateService {
   ): Promise<number> {
     let query = this.dataFetchStateRepository
       .createQueryBuilder('state')
-      .select('MIN(state.latestIndexedBlockTimestamp)', 'leastTimestamp');
+      .select('MIN(state.latestIndexedBlockTimestamp)', 'leastTimestamp')
+      .where('state.isActive = true');
 
     // Single network
     if (isNumber(networks)) {
