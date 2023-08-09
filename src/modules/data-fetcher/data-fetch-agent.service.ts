@@ -95,6 +95,9 @@ class FetchAgent {
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
+        this.logger.debug(`
+Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${lastUpdateTime} - skip ${skip} - take ${take}
+        `);
         result = await this.graphqlClientAdapterService.getBalanceChanges({
           subgraphUrl,
           contractAddress,
@@ -104,7 +107,7 @@ class FetchAgent {
         });
         const { balanceChanges } = result;
         if (balanceChanges.length > 0) {
-          latestBalanceChange = result[balanceChanges.length - 1];
+          latestBalanceChange = balanceChanges[balanceChanges.length - 1];
 
           await this.tokenBalanceService.saveTokenBalanceFromSubgraphMany(
             balanceChanges,

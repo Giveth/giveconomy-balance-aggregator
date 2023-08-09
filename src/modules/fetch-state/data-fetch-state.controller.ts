@@ -6,7 +6,7 @@ import { DataFetchStateService } from 'src/modules/fetch-state/data-fetch-state.
 class QueryParams {
   @IsOptional()
   @IsNumber({}, { each: true })
-  @Transform(({ value }) => value.map(v => +v))
+  @Transform(({ value }) => value.split(',').map(v => +v))
   @IsArray()
   networks?: number[];
 

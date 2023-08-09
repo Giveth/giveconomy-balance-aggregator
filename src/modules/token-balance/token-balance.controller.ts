@@ -41,6 +41,7 @@ class QueryParams {
 
 class QueryParamsByTimestamp extends QueryParams {
   @IsNumber()
+  @Transform(({ value }) => +value)
   timestamp: number;
 }
 
