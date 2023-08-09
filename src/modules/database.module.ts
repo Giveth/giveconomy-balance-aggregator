@@ -24,7 +24,17 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           entities: [TokenBalance, TokenBalanceUpdate, DataFetchState],
           synchronize: process.env.NODE_ENV !== 'production',
           migrations: [CreateTokenBalanceInsertTrigger1684090897120],
-          ssl: configService.get<string>('DATABASE_SSL') === 'true',
+          ssl:
+            configService.get<string>('DATABASE_SSL') !== 'false'
+              ? configService.get<string>('CA_CERT')
+                ? {
+                    rejectUnauthorized: true,
+                    ca: configService.get<string>('CA_CERT'),
+                  }
+                : {
+                    rejectUnauthorized: false,
+                  }
+              : false,
         };
         return options;
       },
