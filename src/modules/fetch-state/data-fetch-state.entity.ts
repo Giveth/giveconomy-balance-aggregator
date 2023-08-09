@@ -19,4 +19,10 @@ export class DataFetchState {
 
   @Column()
   paginationSkip: number;
+
+  @Column()
+  latestIndexedBlockNumber: number;
+
+  @Column()
+  latestIndexedBlockTimestamp: number;
 }

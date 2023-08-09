@@ -132,7 +132,7 @@ export class TokenBalanceController {
     };
   }
 
-  @Get()
+  @Get('updated-after-date')
   async getBalanceUpdatedAfterDate(
     @Query(new ValidationPipe({ transform: true }))
     params: QueryParamsUpdatedAfterDate,

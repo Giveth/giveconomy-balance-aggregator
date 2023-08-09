@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SingleFetchConfig } from 'src/modules/data-fetcher/load-blockchain-config.service';
 import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
@@ -35,6 +36,8 @@ export class DataFetchStateService {
         lastBlockNumber: 0,
         lastUpdateTime: 0,
         paginationSkip: 0,
+        latestIndexedBlockNumber: 0,
+        latestIndexedBlockTimestamp: 0,
       })
       .orIgnore()
       .execute();
@@ -62,5 +65,46 @@ export class DataFetchStateService {
       { id: fetchId },
       { paginationSkip },
     );
+  }
+
+  async updateLatestIndexedBlockNumberAndTimestamp(
+    fetchId: string,
+    data: {
+      timestamp: number;
+      number: number;
+    },
+  ) {
+    await this.dataFetchStateRepository.update(
+      { id: fetchId },
+      {
+        latestIndexedBlockNumber: data.number,
+        latestIndexedBlockTimestamp: data.timestamp,
+      },
+    );
+  }
+
+  async getLeastIndexedBlocksTimestamp(
+    networks?: number | number[],
+  ): Promise<number> {
+    let query = this.dataFetchStateRepository
+      .createQueryBuilder('state')
+      .select('MIN(state.latestIndexedBlockTimestamp)', 'leastTimestamp');
+
+    // Single network
+    if (isNumber(networks)) {
+      query = query.andWhere('state.network = :network', {
+        network: networks,
+      });
+    }
+    // Multiple networks
+    else if (Array.isArray(networks)) {
+      query = query.andWhere('state.network IN (:...networks)', {
+        networks: networks,
+      });
+    }
+
+    const result = await query.getRawOne();
+
+    return result.leastTimestamp || 0;
   }
 }
