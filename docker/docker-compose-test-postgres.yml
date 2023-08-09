@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   balance-aggregator-postgres-test:
-    image: postgres:13.10-bullseye
+    image: postgres:15.3-alpine
     restart: always
     environment:
       - POSTGRES_DB=balance-aggregator
