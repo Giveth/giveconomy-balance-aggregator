@@ -240,7 +240,7 @@ describe('tokenBalanceController test cases', () => {
     it('should return balances of specific network - 2', async () => {
       const { balances } = await controller.getBalanceUpdatedAfterDate({
         date: new Date(0),
-        networks: 3,
+        network: 3,
       });
       expect(balances).toHaveLength(1);
       expect(balances[0]).toMatchObject({
