@@ -73,6 +73,7 @@ export class TokenBalanceService {
         address: string;
         networks: number[];
         balance: string;
+        update_at: Date;
       }
     | undefined
   > {
@@ -120,6 +121,7 @@ export class TokenBalanceService {
       .select('SUM(tokenBalance.balance)', 'balance')
       .addSelect('tokenBalance.address', 'address')
       .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
+      .addSelect('MAX(tokenBalance.update_at)', 'update_at')
       .groupBy('tokenBalance.address')
       .getRawOne();
   }
