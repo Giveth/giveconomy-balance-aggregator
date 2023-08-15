@@ -58,13 +58,13 @@ export class TokenBalanceService {
    *   block?: number; // block number
    * }
    */
-  async getBalanceSingleUser({
-    address,
+  async getBalance({
+    addresses,
     networks,
     timestamp,
     block,
   }: {
-    address: string;
+    addresses: string[];
     networks?: number | number[];
     timestamp?: number;
     block?: number;
@@ -74,13 +74,13 @@ export class TokenBalanceService {
         networks: number[];
         balance: string;
         update_at: Date;
-      }
+      }[]
     | undefined
   > {
     let query = this.tokenBalanceRepository
       .createQueryBuilder('tokenBalance')
-      .where('tokenBalance.address = :address ', {
-        address,
+      .where('tokenBalance.address IN (:...addresses) ', {
+        addresses,
       });
 
     // add timestamp query if exists
@@ -123,7 +123,7 @@ export class TokenBalanceService {
       .addSelect('ARRAY_AGG(tokenBalance.network)', 'networks')
       .addSelect('MAX(tokenBalance.update_at)', 'update_at')
       .groupBy('tokenBalance.address')
-      .getRawOne();
+      .getRawMany();
   }
 
   async getBalancesUpdateAfterDate({

@@ -23,11 +23,16 @@ class EthereumAddress implements ValidatorConstraintInterface {
 }
 
 class QueryParams {
-  @IsString()
+  @IsString({ each: true })
   @Validate(EthereumAddress)
-  @Transform(({ value }) => value.toLowerCase())
-  @ApiProperty({ type: 'string', description: 'Ethereum address' })
-  address: string;
+  @Transform(({ value }) =>
+    value.split(',').map((address: string) => address.toLowerCase()),
+  )
+  @ApiProperty({
+    type: 'string',
+    description: 'Comma-seperated list of user addresses',
+  })
+  addresses: string[];
 
   @IsOptional()
   @IsNumber({}, { each: true })
@@ -43,6 +48,7 @@ class QueryParams {
   @IsOptional()
   @Transform(({ value }) => +value)
   @IsNumber()
+  @Type(() => Number)
   @ApiProperty({
     type: 'number',
     description: 'Network number',
@@ -82,8 +88,12 @@ class QueryParamsUpdatedAfterDate {
 
   @IsDate()
   @Type(() => Date)
+  @Transform(({ value }) => {
+    console.log('value', value);
+    return new Date(value);
+  })
   @ApiProperty({
-    type: 'Date | string | number',
+    type: 'string',
     description:
       'Date in acceptable by NodeJS Date constructor (e.g. ISO, Timestamp milliseconds, ...)',
   })
@@ -91,6 +101,7 @@ class QueryParamsUpdatedAfterDate {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   @ApiProperty({
     type: 'number',
     description: 'Limit of results',
@@ -101,6 +112,7 @@ class QueryParamsUpdatedAfterDate {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   @ApiProperty({
     type: 'number',
     description: 'Skip of results',
@@ -136,29 +148,25 @@ export class TokenBalanceController {
   async getBalanceByTimestamp(
     @Query(new ValidationPipe({ transform: true }))
     params: QueryParamsByTimestamp,
-  ): Promise<TokenBalanceResponse> {
-    const { address, timestamp, networks, network } = params;
-    const result = await this.tokenBalanceService.getBalanceSingleUser({
-      address: address,
+  ): Promise<TokenBalanceResponse[]> {
+    const { addresses, timestamp, networks, network } = params;
+    const result = await this.tokenBalanceService.getBalance({
+      addresses: addresses,
       timestamp: timestamp,
       networks: networks || network,
     });
     if (!result) {
-      return {
-        address: address,
-        networks: [],
-        timestamp: timestamp,
-        balance: '0',
-        update_at: 'n/a',
-      };
+      return [];
     }
-    return {
-      address: result.address,
-      networks: result.networks,
-      timestamp: timestamp || 'latest',
-      balance: result.balance,
-      update_at: result.update_at,
-    };
+    return result.map(_result => {
+      return {
+        address: _result.address,
+        networks: _result.networks,
+        timestamp: timestamp || 'latest',
+        balance: _result.balance,
+        update_at: _result.update_at,
+      };
+    });
   }
 
   @Get()
@@ -166,22 +174,24 @@ export class TokenBalanceController {
   async getBalance(
     @Query(new ValidationPipe({ transform: true }))
     params: QueryParams,
-  ): Promise<TokenBalanceResponse> {
-    const { address, networks, network } = params;
-    const result = await this.tokenBalanceService.getBalanceSingleUser({
-      address: address,
+  ): Promise<TokenBalanceResponse[]> {
+    const { addresses, networks, network } = params;
+    const result = await this.tokenBalanceService.getBalance({
+      addresses: addresses,
       networks: networks || network,
     });
     if (!result) {
       return null;
     }
-    return {
-      address: result.address,
-      networks: result.networks,
-      timestamp: 'latest',
-      balance: result.balance,
-      update_at: result.update_at,
-    };
+    return result.map(_result => {
+      return {
+        address: _result.address,
+        networks: _result.networks,
+        timestamp: 'latest',
+        balance: _result.balance,
+        update_at: _result.update_at,
+      };
+    });
   }
 
   @Get('updated-after-date')
