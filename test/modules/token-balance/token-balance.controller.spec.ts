@@ -45,10 +45,10 @@ describe('tokenBalanceController test cases', () => {
 
     it('should return null when no balance', async () => {
       const result = await controller.getBalance({
-        address: TEST_USER_ADDRESS_1,
+        addresses: [TEST_USER_ADDRESS_1],
         network: 1,
       });
-      expect(result).toBeNull();
+      expect(result).toHaveLength(0);
     });
   });
   describe('getBalance on timestamp', () => {
@@ -96,31 +96,31 @@ describe('tokenBalanceController test cases', () => {
     });
 
     it('should return balance for single chain', async () => {
-      const result = await controller.getBalance({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
         network: 2,
       });
       expect(result.balance).toBe('5000000000000000000');
     });
 
     it('should return balance for multiple chains', async () => {
-      const result = await controller.getBalance({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
         networks: [1, 3],
       });
       expect(result.balance).toBe('10000000000000000000');
     });
 
     it('should return balance for all chains when chain is not specified', async () => {
-      const result = await controller.getBalance({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
       });
       expect(result.balance).toBe('15000000000000000000');
     });
 
     it('should return balance for single chain on old timestamp', async () => {
-      const result = await controller.getBalanceByTimestamp({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalanceByTimestamp({
+        addresses: [TEST_USER_ADDRESS_1],
         network: 2,
         timestamp: oldTimestamp,
       });
@@ -128,8 +128,8 @@ describe('tokenBalanceController test cases', () => {
     });
 
     it('should return balance for multiple chains on old timestamp', async () => {
-      const result = await controller.getBalanceByTimestamp({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalanceByTimestamp({
+        addresses: [TEST_USER_ADDRESS_1],
         networks: [1, 3],
         timestamp: oldTimestamp,
       });
@@ -137,8 +137,8 @@ describe('tokenBalanceController test cases', () => {
     });
 
     it('should return balance for all chains when chain is not specified on old timestamp', async () => {
-      const result = await controller.getBalanceByTimestamp({
-        address: TEST_USER_ADDRESS_1,
+      const [result] = await controller.getBalanceByTimestamp({
+        addresses: [TEST_USER_ADDRESS_1],
         timestamp: oldTimestamp,
       });
       expect(result.balance).toBe('6000000000000000000');

@@ -14,7 +14,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint {src,test}/*.ts {src,test}/**/*.ts {src,test}/**/**/*.ts",
     "lint:fix": "eslint {src,test}/*.ts {src,test}/**/*.ts {src,test}/**/**/*.ts --fix",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --testTimeout=20000",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",

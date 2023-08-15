@@ -190,24 +190,24 @@ describe('TokenBalanceService', () => {
       await service.tokenBalanceRepository.delete({
         address: TEST_USER_ADDRESS_1,
       });
-      let balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS_1,
+      let balance = await service.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
       });
-      expect(balance).toBeUndefined();
+      expect(balance).toHaveLength(0);
 
       // Single network
-      balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS_1,
+      balance = await service.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
         networks: 1,
       });
-      expect(balance).toBeUndefined();
+      expect(balance).toHaveLength(0);
 
       // multiple network
-      balance = await service.getBalanceSingleUser({
-        address: TEST_USER_ADDRESS_1,
+      balance = await service.getBalance({
+        addresses: [TEST_USER_ADDRESS_1],
         networks: [1, 2],
       });
-      expect(balance).toBeUndefined();
+      expect(balance).toHaveLength(0);
     });
 
     it('get simple balance', async () => {
@@ -221,8 +221,8 @@ describe('TokenBalanceService', () => {
         blockRange: '[1,)',
       };
       await service.create(data);
-      const balance = await service.getBalanceSingleUser({
-        address: data.address,
+      const [balance] = await service.getBalance({
+        addresses: [data.address],
         networks: data.network,
       });
       expect(balance).not.toBeFalsy();
@@ -231,16 +231,16 @@ describe('TokenBalanceService', () => {
     });
 
     it('get balance by timestamp and block', async () => {
-      let balance = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      let [balance] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
         networks: baseTokenBalance.network,
         timestamp: new Date('2021-01-02 UTC').getTime() / 1000,
       });
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('2000000000000000000');
 
-      balance = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      [balance] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
         networks: baseTokenBalance.network,
         block: 1533,
       });
@@ -249,8 +249,8 @@ describe('TokenBalanceService', () => {
     });
 
     it('get latest balance when no timestamp or block is provided', async () => {
-      const balance = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      const [balance] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
         networks: baseTokenBalance.network,
       });
       expect(balance).toBeTruthy();
@@ -292,8 +292,8 @@ describe('TokenBalanceService', () => {
 
     it('get balance multiple networks', async () => {
       // Get balance for networks 1, 2, 3
-      const result = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      const [result] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
         networks: networks.slice(0, 3),
       });
 
@@ -312,8 +312,8 @@ describe('TokenBalanceService', () => {
     });
 
     it('get balance all networks', async () => {
-      const result = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      const [result] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
       });
 
       const expectedBalance = latestBalances
@@ -329,8 +329,8 @@ describe('TokenBalanceService', () => {
       expect(result.networks).toEqual(networks);
     });
     it('get balance all network at specific timestamp', async () => {
-      const result = await service.getBalanceSingleUser({
-        address: baseTokenBalance.address,
+      const [result] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
         timestamp: new Date('2020-02-01 GMT').getTime() / 1000,
       });
 
