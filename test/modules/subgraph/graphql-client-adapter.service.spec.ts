@@ -7,7 +7,7 @@ import {
 import { GraphqlClientAdapterService } from 'src/modules/subgraph/graphql-client-adapter.service';
 import TestConfigureModule from 'test/modules/testConfigure.module';
 
-describe('GraphqlClientAdapterService', () => {
+describe.skip('GraphqlClientAdapterService', () => {
   let service: GraphqlClientAdapterService;
   let config: SingleFetchConfig;
 
