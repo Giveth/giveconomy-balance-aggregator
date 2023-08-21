@@ -11,6 +11,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
+import { isNumber } from 'src/utils';
 
 class EthereumAddress implements ValidatorConstraintInterface {
   validate(value: string) {
@@ -87,15 +88,16 @@ class QueryParamsUpdatedAfterDate {
   network?: number;
 
   @IsDate()
-  @Type(() => Date)
-  @Transform(({ value }) => {
-    console.log('value', value);
-    return new Date(value);
-  })
+  @Transform(({ value }) => new Date(isNumber(value) ? +value : value))
   @ApiProperty({
-    type: 'string',
-    description:
-      'Date in acceptable by NodeJS Date constructor (e.g. ISO, Timestamp milliseconds, ...)',
+    oneOf: [
+      { type: 'number', description: 'Date in timestamp milliseconds' },
+      {
+        type: 'string',
+        description:
+          'Date in acceptable by NodeJS Date constructor (e.g. ISO, ...)',
+      },
+    ],
   })
   date: Date;
 

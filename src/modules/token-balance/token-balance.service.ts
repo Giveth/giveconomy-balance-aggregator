@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubgraphBalanceChangeEntity } from 'src/modules/subgraph/graphql-client-adapter.service';
 import { TokenBalanceUpdate } from 'src/modules/token-balance/token-balance-update.entity';
 import { TokenBalance } from 'src/modules/token-balance/token-balance.entity';
+import { isNumber } from 'src/utils';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -107,7 +107,7 @@ export class TokenBalanceService {
     // Single network
     if (isNumber(networks)) {
       query = query.andWhere('tokenBalance.network = :network', {
-        network: networks,
+        network: +networks,
       });
     }
     // Multiple networks
@@ -172,7 +172,7 @@ export class TokenBalanceService {
 
     if (isNumber(networks)) {
       query = query.andWhere('tokenBalance.network = :network', {
-        network: networks,
+        network: +networks,
       });
     }
     // Multiple networks
