@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { isNumber } from '@nestjs/common/utils/shared.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SingleFetchConfig } from 'src/modules/data-fetcher/load-blockchain-config.service';
 import { DataFetchState } from 'src/modules/fetch-state/data-fetch-state.entity';
+import { isNumber } from 'src/utils';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -102,7 +102,7 @@ export class DataFetchStateService {
     // Single network
     if (isNumber(networks)) {
       query = query.andWhere('state.network = :network', {
-        network: networks,
+        network: +networks,
       });
     }
     // Multiple networks
