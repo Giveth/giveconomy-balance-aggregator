@@ -256,6 +256,39 @@ describe('TokenBalanceService', () => {
       expect(balance).toBeTruthy();
       expect(balance.balance).toBe('3000000000000000000');
     });
+
+    it('should consider timestamp in seconds', async () => {
+      await service.create({
+        ...baseTokenBalance,
+        balance: '1000',
+        timeRange: '[2022-01-01 00:00:00,)',
+        blockRange: '[4000,)',
+      });
+      await service.create({
+        ...baseTokenBalance,
+        balance: '2000',
+        timeRange: '[2022-01-01 00:00:01,)',
+        blockRange: '[4001,)',
+      });
+      const date1 = new Date('2022-01-01 00:00:00 UTC');
+      const date2 = new Date('2022-01-01 00:00:01 UTC');
+
+      let [balance] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
+        networks: baseTokenBalance.network,
+        timestamp: Math.floor(date1.getTime() / 1000),
+      });
+      expect(balance).toBeTruthy();
+      expect(balance.balance).toBe('1000');
+
+      [balance] = await service.getBalance({
+        addresses: [baseTokenBalance.address],
+        networks: baseTokenBalance.network,
+        timestamp: Math.floor(date2.getTime() / 1000),
+      });
+      expect(balance).toBeTruthy();
+      expect(balance.balance).toBe('2000');
+    });
   });
 
   describe('get balance multiple networks', () => {
