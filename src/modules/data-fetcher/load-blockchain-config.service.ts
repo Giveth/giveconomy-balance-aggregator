@@ -42,4 +42,10 @@ export class LoadBlockchainConfigService {
 
     return blockChainConfig;
   }
+
+  async getSubgraphPaginationLimit(): Promise<number> {
+    return Number(
+      this.configService.get<number>('SUBGRAPH_PAGINATION_LIMIT') || 4000,
+    );
+  }
 }

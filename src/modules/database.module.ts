@@ -22,7 +22,7 @@ import { ConnectionOptions, DataSource } from 'typeorm';
           password: configService.get<string>('DATABASE_PASSWORD'),
           database: configService.get<string>('DATABASE_NAME'),
           entities: [TokenBalance, TokenBalanceUpdate, DataFetchState],
-          synchronize: process.env.NODE_ENV !== 'production',
+          synchronize: true, // process.env.NODE_ENV !== 'production', TODO: change to false in production
           migrations: [CreateTokenBalanceInsertTrigger1684090897120],
           ssl:
             configService.get<string>('DATABASE_SSL') !== 'false'

@@ -32,6 +32,7 @@ export class DataFetchAgentService {
           this.dataFetchStateService,
           this.graphqlClientAdapterService,
           this.tokenBalanceService,
+          this.loadBlockChainConfigService,
         );
         return fetchAgent.run();
       }),
@@ -54,6 +55,7 @@ class FetchAgent {
     readonly dataFetchStateService: DataFetchStateService,
     readonly graphqlClientAdapterService: GraphqlClientAdapterService,
     readonly tokenBalanceService: TokenBalanceService,
+    readonly loadBlockChainConfigService: LoadBlockchainConfigService,
   ) {}
 
   async run() {
@@ -76,6 +78,9 @@ class FetchAgent {
       return;
     }
 
+    const subgraphPaginationLimit =
+      await this.loadBlockChainConfigService.getSubgraphPaginationLimit();
+
     this.logger.debug('Fetching id ' + this.fetchId);
 
     try {
@@ -86,7 +91,7 @@ class FetchAgent {
       const { lastUpdateTime, paginationSkip } = fetchState;
       const { subgraphUrl, contractAddress } = this.fetchConfig;
       let latestBalanceChange: SubgraphBalanceChangeEntity;
-      const take = 100;
+      const take = 500;
       let skip = paginationSkip;
       let result: {
         balanceChanges: SubgraphBalanceChangeEntity[];
@@ -106,9 +111,33 @@ Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${last
           take,
         });
         const { balanceChanges } = result;
+        let reachedPaginationLimit = false;
         if (balanceChanges.length > 0) {
           latestBalanceChange = balanceChanges[balanceChanges.length - 1];
+          reachedPaginationLimit =
+            skip + balanceChanges.length >= subgraphPaginationLimit;
+          if (reachedPaginationLimit) {
+            this.logger.debug(
+              `Reached pagination limit. Fetch id ${this.fetchId}, last update time ${latestBalanceChange.time}\n`,
+              `Next time start from the latest balance change time minus 1 second\n`,
+              `Popping all balance changes with time ${latestBalanceChange.time}`,
+            );
 
+            do {
+              this.logger.debug(
+                `Popping balance change with time ${
+                  balanceChanges[balanceChanges.length - 1].time
+                }`,
+              );
+              balanceChanges.pop();
+            } while (
+              balanceChanges.length > 0 &&
+              balanceChanges[balanceChanges.length - 1].time ===
+                latestBalanceChange.time
+            );
+          }
+
+          // TODO: save token balance and updating fetch state should be in a transaction
           await this.tokenBalanceService.saveTokenBalanceFromSubgraphMany(
             balanceChanges,
             this.fetchConfig.network,
@@ -124,17 +153,25 @@ Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${last
           );
         }
 
-        if (balanceChanges.length < take) {
+        if (balanceChanges.length < take || reachedPaginationLimit) {
           // Update last update time and block number and reset pagination skip
           if (latestBalanceChange) {
             this.logger.debug(
               `Fetching completed. Fetch id ${this.fetchId}, last update time ${latestBalanceChange.time}`,
             );
+            let lastUpdateTime = +latestBalanceChange.time;
+            let lastBlockNumber = +latestBalanceChange.block;
+
+            if (reachedPaginationLimit) {
+              lastUpdateTime = lastUpdateTime > 0 ? lastUpdateTime - 1 : 0;
+              lastBlockNumber = lastBlockNumber > 0 ? lastBlockNumber - 1 : 0;
+            }
+
             await this.dataFetchStateService.updateLastUpdateTimeAndBlockNumber(
               this.fetchId,
               {
-                lastUpdateTime: +latestBalanceChange.time,
-                lastBlockNumber: +latestBalanceChange.block,
+                lastUpdateTime,
+                lastBlockNumber,
               },
             );
           } else {
