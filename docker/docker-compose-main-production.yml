@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+  balance-aggregator:
+    image: ghcr.io/giveth/giveconomy-balance-aggregator:main
+    environment:
+      - ENVIRONMENT=production
+    restart: always
+    ports:
+      - "3001:3000"
+    volumes:
+      - type: bind
+        source: ../config
+        target: /usr/src/app/config
+    networks:
+      - balance-aggregator-main
+volumes:
+  db-data:
+
+networks:
+  balance-aggregator-main:
