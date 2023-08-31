@@ -4,7 +4,7 @@ services:
   balance-aggregator:
     image: ghcr.io/giveth/giveconomy-balance-aggregator:main
     environment:
-      - ENVIRONMENT=production
+      - NODE_ENV=production
     restart: always
     ports:
       - "3001:3000"
