@@ -54,13 +54,6 @@ module.exports = {
         },
       },
     ],
-    "prettier/prettier": [
-      "error",
-      {
-        "singleQuote": true,
-        "trailingComma": "all",
-        "arrowParens": "avoid"
-      }
-    ]
+    "prettier/prettier": [ "error" ]
   },
 };
