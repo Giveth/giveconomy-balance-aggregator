@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 export type SubgraphBalanceChangeEntity = {
@@ -12,6 +13,11 @@ export type SubgraphBalanceChangeEntity = {
 };
 @Injectable()
 export class GraphqlClientAdapterService {
+  private origin;
+  constructor(readonly configService: ConfigService) {
+    this.origin =
+      this.configService.get<string>('SUBGRAPH_DOMAIN') || 'https://giveth.io';
+  }
   async getBalanceChanges(params: {
     subgraphUrl: string;
     contractAddress: string;
@@ -56,7 +62,15 @@ export class GraphqlClientAdapterService {
       }
       `;
 
-    const result = await axios.post(subgraphUrl, { query });
+    const result = await axios.post(
+      subgraphUrl,
+      { query },
+      {
+        headers: {
+          Origin: this.origin,
+        },
+      },
+    );
     const { balanceChanges, _meta } = result.data.data;
     return {
       balanceChanges,
