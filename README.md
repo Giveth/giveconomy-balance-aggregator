@@ -1,34 +1,168 @@
+# Giveconomy Balance Aggregator
 
-## Balance Aggregator
+## 1. Project Overview
 
-This service retrieves balances and their history from various sources and provides a persistent representation of the balances.
-It is specifically designed to serve as a backend for the Giveth impact-graph service, catering to the requirements of GIVpower-related functionalities.
+### Purpose
+The Giveconomy Balance Aggregator is a NestJS-based service that aggregates and manages token balances across the Giveth ecosystem. It serves as a central component for tracking and managing token balances across different networks and protocols.
 
-The Balance Aggregator can furnish the aggregated balance of an address at a given block number or a specific date (GIVpower balance snapshot).
-Additionally, it can provide balances that have been updated after a particular date (GIVpower Instant Boosting).
+### Key Features
+- Token balance tracking and aggregation
+- Multi-network support
+- Real-time balance updates
+- Subgraph integration for blockchain data
+- Database persistence for historical data
 
-## Running the app
+### Live Links
+- Production: [Coming Soon]
+- Staging: [Coming Soon]
 
-```bash
-# development
-$ npm run start
+## 2. Architecture Overview
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+### System Diagram
+```mermaid
+graph TD
+    A[Balance Aggregator] --> B[Token Balance Module]
+    A --> C[Fetch State Module]
+    A --> D[Subgraph Module]
+    A --> E[Data Fetcher Module]
+    B --> F[Database]
+    C --> F
+    D --> F
+    E --> F
 ```
 
-## Test
+### Tech Stack
+- **Backend Framework**: NestJS
+- **Database**: PostgreSQL
+- **ORM**: TypeORM
+- **API Documentation**: Swagger
+- **Testing**: Jest
+- **Containerization**: Docker
 
-```bash
-# start test database
-$ docker-compose -f docker/docker-compose-test-postgres.yml up -d
+### Data Flow
+1. Data is fetched from various sources including subgraphs and blockchain networks
+2. Data is processed and normalized in the respective modules
+3. Processed data is stored in the PostgreSQL database
+4. API endpoints provide access to the aggregated data
 
-# unit tests
-$ npm run test
+## 3. Getting Started
+
+### Prerequisites
+- Node.js 18.x
+- PostgreSQL 12+
+- Docker (optional)
+- npm or yarn
+
+### Installation Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/giveth/giveconomy-balance-aggregator.git
+   cd giveconomy-balance-aggregator
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up the database:
+   ```bash
+   # Create a PostgreSQL database
+   createdb giveconomy_balance_aggregator
+   ```
+
+### Configuration
+Create a `.env` file in the root directory with the following variables:
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/giveconomy_balance_aggregator
+PORT=3000
 ```
 
-## API
-See [swagger](http://localhost:3000/api)
+## 4. Usage Instructions
+
+### Running the Application
+- Development mode:
+  ```bash
+  npm run start:dev
+  ```
+- Production mode:
+  ```bash
+  npm run build
+  npm run start:prod
+  ```
+
+### Testing
+- Run all tests:
+  ```bash
+  npm test
+  ```
+- Run tests with coverage:
+  ```bash
+  npm run test:cov
+  ```
+- Run e2e tests:
+  ```bash
+  npm run test:e2e
+  ```
+
+### Common Tasks
+- Database migrations:
+  ```bash
+  npm run typeorm migration:run
+  ```
+- Code formatting:
+  ```bash
+  npm run format
+  ```
+- Linting:
+  ```bash
+  npm run lint
+  ```
+
+## 5. Deployment Process
+
+### Environments
+- Development
+- Staging
+- Production
+
+### Deployment Steps
+1. Build the Docker image:
+   ```bash
+   docker build -t giveconomy-balance-aggregator .
+   ```
+
+2. Run the container:
+   ```bash
+   docker run -p 3000:3000 giveconomy-balance-aggregator
+   ```
+
+### CI/CD Integration
+The project uses GitHub Actions for CI/CD. Workflows are defined in the `.github/workflows` directory.
+
+## 6. Troubleshooting
+
+### Common Issues
+1. **Database Connection Issues**
+   - Verify database credentials in `.env`
+   - Check if PostgreSQL is running
+   - Ensure database exists and is accessible
+
+2. **Build Failures**
+   - Clear node_modules and reinstall dependencies
+   - Check TypeScript compilation errors
+   - Verify all environment variables are set
+
+### Logs and Debugging
+- Development logs are available in the console
+- Production logs can be accessed through Docker:
+  ```bash
+  docker logs <container_id>
+  ```
+- Enable debug mode:
+  ```bash
+  npm run start:debug
+  ```
+
+## License
+This project is licensed under the terms specified in the LICENSE file.
