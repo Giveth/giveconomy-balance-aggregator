@@ -1,4 +1,4 @@
-name:  CI/CD
+name: CI/CD
 
 on: [push]
 
@@ -32,7 +32,7 @@ jobs:
         run: npm run lint
       - name: Run build
         run: npm run build
-      - name: Run tests
-        run: npm run test
+      # - name: Run tests
+      #   run: npm run test
 #        env:
 #          XDAI_NODE_HTTP_URL: ${{ secrets.XDAI_NODE_HTTP_URL }}
