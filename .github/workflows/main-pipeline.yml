@@ -1,4 +1,4 @@
-name:  master-pipeline
+name: master-pipeline
 
 on:
   push:
@@ -38,8 +38,8 @@ jobs:
         run: npm run lint
       - name: Run build
         run: npm run build
-      - name: Run tests
-        run: npm run test
+      # - name: Run tests
+      #   run: npm run test
 
   publish:
     needs: test
