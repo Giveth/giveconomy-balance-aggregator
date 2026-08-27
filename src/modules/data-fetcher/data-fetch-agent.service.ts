@@ -89,7 +89,7 @@ class FetchAgent {
         this.fetchId,
       );
       const { lastUpdateTime, paginationSkip } = fetchState;
-      const { subgraphUrl, contractAddress } = this.fetchConfig;
+      const { subgraphUrl, contractAddress, subgraphApiKey } = this.fetchConfig;
       let latestBalanceChange: SubgraphBalanceChangeEntity;
       const take = 500;
       let skip = paginationSkip;
@@ -109,6 +109,7 @@ Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${last
           sinceTimestamp: lastUpdateTime,
           skip,
           take,
+          subgraphApiKey,
         });
         const { balanceChanges } = result;
         let reachedPaginationLimit = false;

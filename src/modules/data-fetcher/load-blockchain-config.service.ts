@@ -11,6 +11,13 @@ export type SingleFetchConfig = {
   contractAddress: string;
   subgraphUrl: string;
   fetchInterval: number;
+  /**
+   * Key for subgraphs on The Graph's decentralised gateway, which rejects
+   * unauthenticated queries. Optional: self-hosted subgraphs need none, and a
+   * deployment where every network shares one key can set SUBGRAPH_API_KEY
+   * instead of repeating it per network.
+   */
+  subgraphApiKey?: string;
 };
 
 export type BlockChainConfig = {
