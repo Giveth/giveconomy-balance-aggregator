@@ -98,11 +98,32 @@ DATABASE_PASSWORD=postgres
 DATABASE_NAME=balance-aggregator
 
 SUBGRAPH_PAGINATION_LIMIT=5000
+SUBGRAPH_API_KEY=
+SUBGRAPH_API_KEY_HOSTS=
 
 BLOCKCHAIN_CONFIG_FILE_NAME=test.yaml
 ```
 
 `BLOCKCHAIN_CONFIG_FILE_NAME` is the name of the file in the `config/blockchain` directory that contains the blockchain configuration.
+
+`SUBGRAPH_API_KEY` is required for any subgraph hosted on The Graph's
+decentralised gateway (`gateway.thegraph.com`), which rejects unauthenticated
+queries. It is sent as `Authorization: Bearer <key>`. Leave it blank if every
+configured subgraph is self-hosted; a single network can override it with its
+own `subgraphApiKey`.
+
+`SUBGRAPH_API_KEY_HOSTS` limits where that shared key may be sent, comma
+separated; it defaults to `gateway.thegraph.com` and
+`gateway-arbitrum.network.thegraph.com`. A deployment typically mixes
+gateway-hosted subgraphs with Studio- or self-hosted ones, and only the gateway
+needs the credential, so the shared key is attached only when the request's host
+is on this list. A per-network `subgraphApiKey` is an explicit operator choice
+and is always sent.
+
+Two related safeguards: the key is never sent over a non-HTTPS URL (the request
+fails instead), and keys are redacted from logs and error messages — both the
+`subgraphApiKey` field and a key embedded in a URL as
+`/api/<key>/subgraphs/...`, which is the form the gateway also accepts.
 
 Copy the `example.env` file to config directory and rename it to `production.env` or `development.env` based on your environment. `development.env` is used by default, unless the NODE_ENV is set to `production`.
 
@@ -122,6 +143,26 @@ networks:
     subgraphUrl: 'https://api.thegraph.com/subgraphs/name/giveth/giveth-economy-xdai-staging'
     fetchInterval: 5000
 ```
+
+`subgraphApiKey` is optional per network and overrides `SUBGRAPH_API_KEY` for
+that network only. A gateway-hosted network looks like this — the
+`contractAddress` is the GIVpower **unipool (LM)** contract for that chain, not
+the GIV token:
+
+```yaml
+  - name: optimism-mainnet
+    network: 10
+    contractAddress: '0x301C739CF6bfb6B47A74878BdEB13f92F13Ae5E7'
+    subgraphUrl: 'https://gateway.thegraph.com/api/subgraphs/id/zyoJAUh2eGLEbEkBqESDD497qHLGH1YcKH9PBEMnWjM'
+    fetchInterval: 5000
+    # subgraphApiKey: '...'   # falls back to SUBGRAPH_API_KEY when omitted
+```
+
+Note that `/fetch-state/least-indexed-block-timestamp` returns the MINIMUM
+across every configured network, and consumers use it to decide whether a
+point-in-time balance can be trusted yet. One network that cannot sync therefore
+holds back every consumer, so remove networks whose subgraph is retired rather
+than leaving them configured and failing.
 
 ## 4. Usage Instructions
 
