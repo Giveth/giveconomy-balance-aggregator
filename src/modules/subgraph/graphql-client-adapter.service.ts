@@ -4,6 +4,7 @@ import axios from 'axios';
 
 import {
   DEFAULT_API_KEY_HOSTS,
+  hasEmbeddedKey,
   hostAcceptsSharedKey,
   isHttps,
   parseApiKeyHosts,
@@ -129,7 +130,13 @@ export class GraphqlClientAdapterService {
         `Subgraph query failed for ${redactUrl(subgraphUrl)}: ${
           detail || 'unknown error'
         }` +
-          (apiKey ? '' : ' (no SUBGRAPH_API_KEY configured for this network)'),
+          // The gateway also accepts a key inside the URL path, and the
+          // deployed configs use that form. Claiming "no key configured" for
+          // such a network sends the reader off to add one when the real cause
+          // is something else entirely -- a retired subgraph, say.
+          (apiKey || hasEmbeddedKey(subgraphUrl)
+            ? ''
+            : ' (no SUBGRAPH_API_KEY configured for this network)'),
       );
     }
 

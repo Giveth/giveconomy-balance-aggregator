@@ -238,6 +238,48 @@ describe('GraphqlClientAdapterService credential hygiene', () => {
     expect(headersOf(0).Authorization).toBeUndefined();
   });
 
+  it('does not claim a key is missing when one is embedded in the URL', async () => {
+    // Seen for real on staging: network 2442 failed with "subgraph not found:
+    // no allocations" and the message went on to blame a missing key, while the
+    // URL carried one all along. That points the reader at the wrong fix.
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: { errors: [{ message: 'subgraph not found: no allocations' }] },
+    } as never);
+
+    const message = await makeService()
+      .getBalanceChanges({
+        ...params,
+        subgraphUrl:
+          'https://gateway-arbitrum.network.thegraph.com/api/720ca27934ee17d259dc2975d9a6d714/subgraphs/id/abc',
+      })
+      .then(
+        () => 'did not throw',
+        (error: Error) => error.message,
+      );
+
+    expect(message).toContain('no allocations');
+    expect(message).not.toContain('no SUBGRAPH_API_KEY configured');
+  });
+
+  it('still says the key is missing for a keyless gateway URL', async () => {
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: {
+        errors: [{ message: 'auth error: missing authorization header' }],
+      },
+    } as never);
+
+    const message = await makeService()
+      .getBalanceChanges(params)
+      .then(
+        () => 'did not throw',
+        (error: Error) => error.message,
+      );
+
+    expect(message).toContain('no SUBGRAPH_API_KEY configured');
+  });
+
   it('keeps a URL-embedded key out of error messages', async () => {
     // The gateway also accepts the key inside the path, which is the form the
     // deployed configs use. An error naming the raw URL would publish it.
