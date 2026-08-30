@@ -1,4 +1,5 @@
 import {
+  hasEmbeddedKey,
   hostAcceptsSharedKey,
   isHttps,
   parseApiKeyHosts,
@@ -65,6 +66,19 @@ describe('redactFetchConfig', () => {
     });
 
     expect('subgraphApiKey' in redacted).toBe(false);
+  });
+});
+
+describe('hasEmbeddedKey', () => {
+  it.each([
+    [
+      'https://gateway.thegraph.com/api/720ca27934ee17d259dc2975d9a6d714/subgraphs/id/abc',
+      true,
+    ],
+    ['https://gateway.thegraph.com/api/subgraphs/id/abc', false],
+    ['https://api.studio.thegraph.com/query/76292/x/version/latest', false],
+  ])('%s -> %s', (url, expected) => {
+    expect(hasEmbeddedKey(url as string)).toBe(expected);
   });
 });
 

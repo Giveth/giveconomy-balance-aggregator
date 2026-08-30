@@ -34,6 +34,14 @@ export const hostAcceptsSharedKey = (url: string, hosts: string[]): boolean => {
   }
 };
 
+/**
+ * True when the URL already carries a key in the gateway's legacy
+ * `/api/<key>/subgraphs/` form. Such a network is authenticated even though no
+ * `subgraphApiKey` is set, so a "no key configured" hint would be wrong.
+ */
+export const hasEmbeddedKey = (url: string): boolean =>
+  /\/api\/[^/]+\/subgraphs\//i.test(url);
+
 /** True only for a URL we can parse and that uses TLS. */
 export const isHttps = (url: string): boolean => {
   try {
