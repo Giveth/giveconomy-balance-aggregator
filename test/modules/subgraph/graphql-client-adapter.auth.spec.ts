@@ -147,3 +147,116 @@ describe('GraphqlClientAdapterService error surfacing', () => {
     expect(result.block).toEqual({ number: 42, timestamp: 1700 });
   });
 });
+
+/**
+ * A shared key is a convenience default, not a licence to authenticate to every
+ * host in the config. Real deployments mix hosts: staging pairs Studio-hosted
+ * subgraphs (api.studio.thegraph.com) with gateway-hosted ones, and only the
+ * gateway ever needed the credential.
+ */
+describe('GraphqlClientAdapterService shared-key host scoping', () => {
+  const studioUrl =
+    'https://api.studio.thegraph.com/query/76292/giveconomy-staging/version/latest';
+
+  it('does not send the shared key to a host outside the allowlist', async () => {
+    await makeService({ SUBGRAPH_API_KEY: 'global-key' }).getBalanceChanges({
+      ...params,
+      subgraphUrl: studioUrl,
+    });
+
+    expect(headersOf(0).Authorization).toBeUndefined();
+    expect(headersOf(0).Origin).toBeDefined();
+  });
+
+  it('still sends the shared key to the default gateway hosts', async () => {
+    const service = makeService({ SUBGRAPH_API_KEY: 'global-key' });
+
+    await service.getBalanceChanges(params);
+    await service.getBalanceChanges({
+      ...params,
+      subgraphUrl:
+        'https://gateway-arbitrum.network.thegraph.com/api/subgraphs/id/abc',
+    });
+
+    expect(headersOf(0).Authorization).toBe('Bearer global-key');
+    expect(headersOf(1).Authorization).toBe('Bearer global-key');
+  });
+
+  it('honours an explicit per-network key even off the allowlist', async () => {
+    // The operator naming a key for this network is a deliberate choice; the
+    // host allowlist only governs the shared fallback.
+    await makeService({ SUBGRAPH_API_KEY: 'global-key' }).getBalanceChanges({
+      ...params,
+      subgraphUrl: studioUrl,
+      subgraphApiKey: 'network-key',
+    });
+
+    expect(headersOf(0).Authorization).toBe('Bearer network-key');
+  });
+
+  it('lets SUBGRAPH_API_KEY_HOSTS override the defaults', async () => {
+    await makeService({
+      SUBGRAPH_API_KEY: 'global-key',
+      SUBGRAPH_API_KEY_HOSTS: ' api.studio.thegraph.com , example.com ',
+    }).getBalanceChanges({ ...params, subgraphUrl: studioUrl });
+
+    expect(headersOf(0).Authorization).toBe('Bearer global-key');
+  });
+
+  it('withholds the shared key from a gateway host once overridden away', async () => {
+    await makeService({
+      SUBGRAPH_API_KEY: 'global-key',
+      SUBGRAPH_API_KEY_HOSTS: 'api.studio.thegraph.com',
+    }).getBalanceChanges(params);
+
+    expect(headersOf(0).Authorization).toBeUndefined();
+  });
+});
+
+describe('GraphqlClientAdapterService credential hygiene', () => {
+  it('refuses to send a key over plain HTTP', async () => {
+    await expect(
+      makeService().getBalanceChanges({
+        ...params,
+        subgraphUrl: 'http://gateway.thegraph.com/api/subgraphs/id/abc',
+        subgraphApiKey: 'network-key',
+      }),
+    ).rejects.toThrow(/non-HTTPS/);
+
+    expect(mockedPost).not.toHaveBeenCalled();
+  });
+
+  it('still allows an unauthenticated HTTP subgraph', async () => {
+    // Self-hosted subgraphs on a private network carry no credential, so there
+    // is nothing to leak and no reason to break them.
+    await makeService().getBalanceChanges({
+      ...params,
+      subgraphUrl: 'http://localhost:8000/subgraphs/name/giveth/test',
+    });
+
+    expect(mockedPost).toHaveBeenCalledTimes(1);
+    expect(headersOf(0).Authorization).toBeUndefined();
+  });
+
+  it('keeps a URL-embedded key out of error messages', async () => {
+    // The gateway also accepts the key inside the path, which is the form the
+    // deployed configs use. An error naming the raw URL would publish it.
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: { errors: [{ message: 'auth error: invalid key' }] },
+    } as never);
+
+    const secretUrl =
+      'https://gateway-arbitrum.network.thegraph.com/api/720ca27934ee17d259dc2975d9a6d714/subgraphs/id/abc';
+
+    const message = await makeService()
+      .getBalanceChanges({ ...params, subgraphUrl: secretUrl })
+      .then(
+        () => 'did not throw',
+        (error: Error) => error.message,
+      );
+
+    expect(message).toContain('<redacted>');
+    expect(message).not.toContain('720ca27934ee17d259dc2975d9a6d714');
+  });
+});

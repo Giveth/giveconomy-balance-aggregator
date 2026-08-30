@@ -8,6 +8,10 @@ import {
   GraphqlClientAdapterService,
   SubgraphBalanceChangeEntity,
 } from 'src/modules/subgraph/graphql-client-adapter.service';
+import {
+  redactFetchConfig,
+  redactUrl,
+} from 'src/modules/subgraph/subgraph-credentials';
 import { TokenBalanceService } from 'src/modules/token-balance/token-balance.service';
 
 @Injectable()
@@ -60,7 +64,9 @@ class FetchAgent {
 
   async run() {
     this.logger.log(
-      `Start fetch - config: ${JSON.stringify(this.fetchConfig)}`,
+      `Start fetch - config: ${JSON.stringify(
+        redactFetchConfig(this.fetchConfig),
+      )}`,
     );
     this.fetchId = await this.dataFetchStateService.initializeFetchConfig(
       this.fetchConfig,
@@ -101,7 +107,9 @@ class FetchAgent {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         this.logger.debug(`
-Fetch id ${this.fetchId} - subgraph url ${subgraphUrl} - last update time ${lastUpdateTime} - skip ${skip} - take ${take}
+Fetch id ${this.fetchId} - subgraph url ${redactUrl(
+          subgraphUrl,
+        )} - last update time ${lastUpdateTime} - skip ${skip} - take ${take}
         `);
         result = await this.graphqlClientAdapterService.getBalanceChanges({
           subgraphUrl,

@@ -99,6 +99,7 @@ DATABASE_NAME=balance-aggregator
 
 SUBGRAPH_PAGINATION_LIMIT=5000
 SUBGRAPH_API_KEY=
+SUBGRAPH_API_KEY_HOSTS=
 
 BLOCKCHAIN_CONFIG_FILE_NAME=test.yaml
 ```
@@ -110,6 +111,19 @@ decentralised gateway (`gateway.thegraph.com`), which rejects unauthenticated
 queries. It is sent as `Authorization: Bearer <key>`. Leave it blank if every
 configured subgraph is self-hosted; a single network can override it with its
 own `subgraphApiKey`.
+
+`SUBGRAPH_API_KEY_HOSTS` limits where that shared key may be sent, comma
+separated; it defaults to `gateway.thegraph.com` and
+`gateway-arbitrum.network.thegraph.com`. A deployment typically mixes
+gateway-hosted subgraphs with Studio- or self-hosted ones, and only the gateway
+needs the credential, so the shared key is attached only when the request's host
+is on this list. A per-network `subgraphApiKey` is an explicit operator choice
+and is always sent.
+
+Two related safeguards: the key is never sent over a non-HTTPS URL (the request
+fails instead), and keys are redacted from logs and error messages — both the
+`subgraphApiKey` field and a key embedded in a URL as
+`/api/<key>/subgraphs/...`, which is the form the gateway also accepts.
 
 Copy the `example.env` file to config directory and rename it to `production.env` or `development.env` based on your environment. `development.env` is used by default, unless the NODE_ENV is set to `production`.
 

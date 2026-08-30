@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
+import {
+  DEFAULT_API_KEY_HOSTS,
+  hostAcceptsSharedKey,
+  isHttps,
+  parseApiKeyHosts,
+  redactUrl,
+} from './subgraph-credentials';
+
 export type SubgraphBalanceChangeEntity = {
   id: string;
   time: string;
@@ -15,6 +23,7 @@ export type SubgraphBalanceChangeEntity = {
 export class GraphqlClientAdapterService {
   private origin;
   private defaultApiKey: string;
+  private apiKeyHosts: string[];
   constructor(readonly configService: ConfigService) {
     this.origin =
       this.configService.get<string>('SUBGRAPH_DOMAIN') || 'https://giveth.io';
@@ -23,6 +32,12 @@ export class GraphqlClientAdapterService {
     // fallback for deployments where every network shares one key.
     this.defaultApiKey =
       this.configService.get<string>('SUBGRAPH_API_KEY') || '';
+    const configuredHosts = parseApiKeyHosts(
+      this.configService.get<string>('SUBGRAPH_API_KEY_HOSTS'),
+    );
+    this.apiKeyHosts = configuredHosts.length
+      ? configuredHosts
+      : DEFAULT_API_KEY_HOSTS;
   }
   async getBalanceChanges(params: {
     subgraphUrl: string;
@@ -43,7 +58,24 @@ export class GraphqlClientAdapterService {
       subgraphUrl,
       subgraphApiKey,
     } = params;
-    const apiKey = subgraphApiKey || this.defaultApiKey;
+    // An explicit per-network key is a deliberate choice by the operator and is
+    // always honoured. The shared key is only a convenience default, so it must
+    // not be broadcast to every configured host: deployments mix gateway URLs
+    // with Studio- and self-hosted ones, and sending the gateway credential to
+    // those hands it to a party that never needed it.
+    const apiKey =
+      subgraphApiKey ||
+      (hostAcceptsSharedKey(subgraphUrl, this.apiKeyHosts)
+        ? this.defaultApiKey
+        : '');
+
+    // A bearer credential on a cleartext first hop is readable in transit.
+    if (apiKey && !isHttps(subgraphUrl)) {
+      throw new Error(
+        'Refusing to send a subgraph API key over a non-HTTPS connection: ' +
+          redactUrl(subgraphUrl),
+      );
+    }
 
     const query = `query {
         balanceChanges(
@@ -94,7 +126,7 @@ export class GraphqlClientAdapterService {
         .filter(Boolean)
         .join('; ');
       throw new Error(
-        `Subgraph query failed for ${subgraphUrl}: ${
+        `Subgraph query failed for ${redactUrl(subgraphUrl)}: ${
           detail || 'unknown error'
         }` +
           (apiKey ? '' : ' (no SUBGRAPH_API_KEY configured for this network)'),
@@ -104,7 +136,9 @@ export class GraphqlClientAdapterService {
     const payload = result.data?.data;
     if (!payload) {
       throw new Error(
-        `Subgraph returned no data for ${subgraphUrl} (HTTP ${result.status})`,
+        `Subgraph returned no data for ${redactUrl(subgraphUrl)} (HTTP ${
+          result.status
+        })`,
       );
     }
 
